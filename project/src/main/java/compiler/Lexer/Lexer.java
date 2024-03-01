@@ -29,6 +29,7 @@ public class Lexer {
                     }
                 }
             }else {
+                pushbackReader.unread(c);
                 return new Symbol("ArithmeticOperator",s);
             }
 
@@ -42,8 +43,10 @@ public class Lexer {
                 return new Symbol("ComparisonOperator",s);
             }
             else if (s.equals("!")){
+                pushbackReader.unread(c);
                 return new Symbol("NegativeOperator",s);
             }
+            pushbackReader.unread(c);
             return new Symbol("ComparisonOperator",s);
         }
         else if (c=='&'){
@@ -51,30 +54,34 @@ public class Lexer {
             s=s+c;
             c = (char) pushbackReader.read();
             if(c=='&'){
-                return new Symbol("AndOperator",s);
+                return new Symbol("AndOperator");
             }
-            else return null;
+            else{
+                return null;
+            }
         }
         else if (c=='|'){
             String s = "";
             s=s+c;
             c = (char) pushbackReader.read();
             if(c=='|'){
-                return new Symbol("OrOperator",s);
+                return new Symbol("OrOperator");
             }
-            else return null;
+            else{
+                return null;
+            }
 
         }
         else if( c == '"'){ //string
             String s = "";
             while(true){
-                s=s+ c;
+                s=s + c;
                 c = (char) pushbackReader.read();
                 if(c == -1){
                     return null; // si le string ne se finit jamais
                 }
                 if (c == '"'){
-                    s= s+ (char) c;
+                    s= s+c;
                     break;
                 }
             }
@@ -88,7 +95,7 @@ public class Lexer {
             while(true){
                 s=s+ c;
                 c=(char) pushbackReader.read();
-                if (!((c>='A'&& c<='Z')|| (c>='a' && c<='z')|| c=='_' || (c>='0' || c<='9'))){ //si ce n'est pas un underscore, une lettre ou un chiffre
+                if (!((c>='A'&& c<='Z')|| (c>='a' && c<='z')|| c=='_' || (c>='0' && c<='9'))){ //si ce n'est pas un underscore, une lettre ou un chiffre
                     pushbackReader.unread(c);
                     break;
                 }
@@ -123,7 +130,7 @@ public class Lexer {
             s = s +c;
             c = (char) pushbackReader.read();
             if(c== '='){
-                s = s +(char)c;
+                s = s + c;
                 return new Symbol("ComparisonOperator", s);
             }
             else{
@@ -131,8 +138,6 @@ public class Lexer {
                 return new Symbol("AssignmentOperator");
             }
         }
-
-
 
         return null;
     }
