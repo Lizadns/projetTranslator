@@ -34,6 +34,19 @@ public class Lexer {
             }
 
         }
+        else if(c>='1' && c<='9') {
+            String s = "";
+            while (true) {
+                s = s + c;
+                c = (char) pushbackReader.read();
+                if (c < '0' || c > '9') {
+                    pushbackReader.unread(c);
+                    break;
+                }
+            }
+            return new Symbol("Number", s);
+        }
+
         else if (c=='!' || c=='<' || c=='>'){
             String s = "";
             s=s+c;
