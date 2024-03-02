@@ -152,11 +152,10 @@ public class Lexer {
             }
         }
 
-        else if ((int) c != -1){
+        else if ( c !='\uFFFF'){
             String s = String.valueOf(c);
             throw new RuntimeException("Error: Invalid character found - " + s);
         }
-
         return null;
     }
 }
