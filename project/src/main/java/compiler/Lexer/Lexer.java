@@ -27,6 +27,9 @@ public class Lexer {
                     if(c=='\n'){ // si c = \tab fin du comment
                         return this.getNextSymbol();
                     }
+                    else if (c == '\uFFFF'){
+                        return null;
+                    }
                 }
             }else {
                 pushbackReader.unread(c);
@@ -90,7 +93,7 @@ public class Lexer {
             while(true){
                 s=s + c;
                 c = (char) pushbackReader.read();
-                if((int) c == -1){
+                if( c == '\uFFFF'){
                     throw new RuntimeException("Error: Invalid character found - " + s);// si le string ne se finit jamais
                 }
                 if (c == '"'){
