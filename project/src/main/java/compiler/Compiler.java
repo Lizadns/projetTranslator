@@ -8,12 +8,12 @@ import compiler.Lexer.Symbol;
 
 import java.io.FileReader;
 import java.io.IOException;
-import java.security.cert.TrustAnchor;
+
 
 public class Compiler {
     public static void main(String[] args) throws IOException {
 
-        Lexer lexer; // Initialisez votre Lexer comme nécessaire
+        Lexer lexer;
         Boolean print;
 
         if (args.length == 1) {
@@ -26,7 +26,6 @@ public class Compiler {
             }
         } else if (args.length == 2) {
             try {
-                // Créer un nouvel objet Lexer en utilisant le premier argument comme input
                 lexer = new Lexer(new FileReader(args[1]));
                 print= Boolean.TRUE;
 
@@ -37,22 +36,18 @@ public class Compiler {
         }
         else {
             System.err.println("Erreur : Aucun fichier spécifié en entrée.");
-            System.err.println("Usage : java compiler.Compiler nomdufichier");
             return;
         }
 
         Symbol symbol=lexer.getNextSymbol();
         while (symbol != null) {
-            // Traitez le symbole ici, par exemple imprimez-le
             if(print){
                 System.out.println(symbol);
             }
             symbol=lexer.getNextSymbol();
 
         }
-
-        // La boucle se terminera lorsque getNextSymbol() retournera null
-        System.out.println("Fin du traitement !");
+        System.out.println("Fin du Lexer");
     }
     }
 

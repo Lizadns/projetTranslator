@@ -17,7 +17,7 @@ public class Lexer {
 
     public Symbol getNextSymbol() throws IOException {
         char c = (char) pushbackReader.read();
-        if(c=='/' || c == '+' || c == '-' || c == '%'){
+        if(c=='/' || c == '+' || c == '-' || c == '%' || c=='*'){
             String s ="";
             s= s + c;
             c = (char) pushbackReader.read();
@@ -34,7 +34,7 @@ public class Lexer {
             }
 
         }
-        else if(c>='1' && c<='9') {
+        else if(c>='0' && c<='9') {
             String s = "";
             while (true) {
                 s = s + c;
@@ -100,7 +100,7 @@ public class Lexer {
             }
             return new Symbol("String",s);
         }
-        else if( c == ' ' || c == '\n' || c== '\t'){ //whitespace: space, new line, tab
+        else if( c == ' ' || c == '\n' || c== '\t' || c=='\r' ){ //whitespace: space, new line, tab
             return this.getNextSymbol();
         }
         else if ((c>='A'&& c<='Z')|| (c>='a' && c<='z')|| c=='_'){ //si ça commence par une lettre ou un underscore
