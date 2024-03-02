@@ -24,7 +24,7 @@ public class Compiler {
                 System.err.println("Erreur lors de la lecture du fichier : " + e.getMessage());
                 return;
             }
-        } else if (args.length == 2) {
+        } else if (args.length == 2 && args[0].equals("lexer")) {
             try {
                 lexer = new Lexer(new FileReader(args[1]));
                 print= Boolean.TRUE;
@@ -35,7 +35,7 @@ public class Compiler {
             }
         }
         else {
-            System.err.println("Erreur : Aucun fichier spécifié en entrée.");
+            System.err.println("Erreur : Mauvais Arguments");
             return;
         }
 
