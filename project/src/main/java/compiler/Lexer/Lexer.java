@@ -148,7 +148,7 @@ public class Lexer {
             }
             else{
                 pushbackReader.unread(c);
-                return new Symbol("AssignmentOperator");
+                return new Symbol("AssignmentOperator",s);
             }
         }
 
