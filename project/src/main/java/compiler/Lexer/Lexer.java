@@ -90,8 +90,8 @@ public class Lexer {
             while(true){
                 s=s + c;
                 c = (char) pushbackReader.read();
-                if(c == -1){
-                    return null; // si le string ne se finit jamais
+                if((int) c == -1){
+                    throw new RuntimeException("Error: Invalid character found - " + s);// si le string ne se finit jamais
                 }
                 if (c == '"'){
                     s= s+c;
@@ -148,7 +148,7 @@ public class Lexer {
             }
             else{
                 pushbackReader.unread(c);
-                return new Symbol("AssignmentOperator",s);
+                return new Symbol("AssignmentOperator");
             }
         }
 
@@ -156,8 +156,6 @@ public class Lexer {
             String s = String.valueOf(c);
             throw new RuntimeException("Error: Invalid character found - " + s);
         }
-        c= (char)pushbackReader.read();
-
 
         return null;
     }
