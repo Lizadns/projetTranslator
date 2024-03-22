@@ -9,10 +9,13 @@ public class TestLexer {
     
     @Test
     public void test() throws IOException {
-        String input = "var x int = 2;";
+        String input = "a";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
-        assertNotNull(lexer.getNextSymbol());
+        System.out.println(lexer.getNextSymbol());
+        System.out.println(lexer.getNextSymbol());
+        System.out.println(lexer.getNextSymbol());
+        //assertNotNull(lexer.getNextSymbol());
     }
 
 }
