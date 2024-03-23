@@ -9,7 +9,6 @@ import java.util.ArrayList;
 
 import compiler.Parser.Program;
 
-import static compiler.Parser.BlockInstruction.parseBlock;
 
 public class Parser {
     static Lexer lexer;
@@ -93,58 +92,104 @@ public class Parser {
         ArrayList<BlockInstruction> blockInstructions = new ArrayList<>();
         match("OpeningHook");
         while(!lookahead.type.equals("ClosingHook") && !lookahead.equals(null)) {
-            BlockInstruction instruction = parseSingleInstruction();
-            blockInstructions.add(instruction);
+            if(lookahead.type.equals("KeywordCondition")){
+                IfStatement statement = parseIfStatement();
+                blockInstructions.add(new BlockInstruction(statement));
+            }else if (lookahead.type.equals("KeywordWhile")){
+                WhileStatement statement = parseWhileStatement();
+                blockInstructions.add(new BlockInstruction(statement));
+            }
+            else if (lookahead.type.equals("KeywordFor")){
+                ForStatement statement = parseForStatement();
+                blockInstructions.add(new BlockInstruction(statement));
+            }
+            else if (lookahead.type.equals("KeywordReturn")){
+                ReturnStatement statement = parseReturnStatement();
+                blockInstructions.add(new BlockInstruction(statement));
+            }else if (lookahead.type.equals("Identifier") || lookahead.type.equals("BaseType")){
+                if(lookahead.type.equals("Identifier")){
+                    String IdentifierName = lookahead.value;
+                    match("Identifier");
+                    if(lookahead.type.equals("OpenParenthesis")){
+                        FunctionCall functionCall = parseFunctionCall(IdentifierName);
+                        blockInstructions.add(new BlockInstruction(functionCall));
+                    }else if (lookahead.type.equals("[")){
+                        match("SpecialCharacter");//CHANGER DANS LE LEXER en OPENCROCHET
+                        match("SpecialCharacter");//CLOSECROCHET
+                        if(lookahead.type.equals("Indentifier")){
+                            //A FINIR
+                        }
+                    }
+                }
+            }
         }
         match("ClosingHook");
         return blockInstructions;
     }
-
-    public static BlockInstruction parseSingleInstruction(){
-        if(lookahead.type.equals("KeywordCondition")){
-            IfStatement statement = parseIfStatement();
-            return new BlockInstruction(statement);
-        }else if (lookahead.type.equals("KeywordWhile")){
-            WhileStatement statement = parseWhileStatement();
-            return new BlockInstruction(statement);
-        }
-        else if (lookahead.type.equals("KeywordFor")){
-            ForStatement statement = parseForStatement();
-            return new BlockInstruction(statement);
-        }
-        else if (lookahead.type.equals("KeywordReturn")){
-            ReturnStatement statement = parseReturnStatement();
-            return new BlockInstruction(statement);
-        }
-        else {
-            try{
-                VariableDeclaration statement = parseVariableDeclaration();
-                return new BlockInstruction(statement);
-            }catch (ParserException e0){
-                try {
-                    GlobalDeclaration statement = parseGlobalDeclaration();
-                    return new BlockInstruction(statement);
-                }catch (ParserException e1){
-                    try {
-                        FunctionCall statement = parseFunctionCall();
-                        return new BlockInstruction(statement);
-                    }catch (ParserException e2){
-                        try{
-                            Assignment statement = parseAssignement();
-                            return new BlockInstruction(statement);
-                        }catch (ParserException e4){
-                            return null;
+    public static ArrayList<Statement> parseStatement() throws ParserException, IOException {
+        ArrayList<Statement> statements = new ArrayList<>();
+        while(lookahead!=null){
+            if(lookahead.type.equals("KeywordMethod")){
+                Method method = parseMethod();
+                statements.add(new Statement(method));
+            }
+            else if (lookahead.type.equals("KeywordCondition")){
+                IfStatement ifStatement = parseIfStatement();
+                statements.add(new Statement(ifStatement));
+            }else if (lookahead.type.equals("KeywordWhile")){
+                WhileStatement whileStatement = parseWhileStatement();
+                statements.add(new Statement(whileStatement));
+            }
+            else if (lookahead.type.equals("KeywordFor")){
+                ForStatement forStatement = parseForStatement();
+                statements.add(new Statement(forStatement));
+            }
+            else if (lookahead.type.equals("Identifier") || lookahead.type.equals("BaseType")){
+                if(lookahead.type.equals("Identifier")){
+                    String IdentifierName = lookahead.value;
+                    match("Identifier");
+                    if(lookahead.type.equals("OpenParenthesis")){
+                        FunctionCall functionCall = parseFunctionCall(IdentifierName);
+                        statements.add(new Statement(functionCall));
+                    }else if (lookahead.type.equals("[")){
+                        match("SpecialCharacter");//CHANGER DANS LE LEXER en OPENCROCHET
+                        match("SpecialCharacter");//CLOSECROCHET
+                        if(lookahead.type.equals("Indentifier")){
+                    //A FINIR
                         }
-
                     }
                 }
             }
-
         }
+    }
+
+    public static FunctionCall parseFunctionCall(String nameCall) throws ParserException,IOException {
+        match("OpenParenthesis");
+        ArrayList<Argument> arguments = parseArguments();
+        match("ClosingParenthesis");
+        return new FunctionCall(nameCall,arguments);
 
     }
-    public static IfStatement parseIfStatement(){
+    public static ArrayList<Argument> parseArguments() throws ParserException,IOException {
+        ArrayList<Argument> arguments = new ArrayList<>();
+        while(!lookahead.type.equals("ClosingParenthesis") && lookahead!=null){
+            Expression expression = parseExpression();
+            arguments.add(new Argument(expression));
+        }
+        match("ClosingParenthesis");
+    }
+
+    public static IfStatement parseIfStatement() throws ParserException,IOException{
 
     }
+    public static WhileStatement parseWhileStatement() throws ParserException,IOException{
+        match("KeywordWhile");
+        match("OpenParenthesis");
+        Expression expression = parseExpression();
+        match("ClosingParenthesis");
+        ArrayList<BlockInstruction> body = parseBlock();
+        return new WhileStatement(expression,body);
+    }
+
 
 }
