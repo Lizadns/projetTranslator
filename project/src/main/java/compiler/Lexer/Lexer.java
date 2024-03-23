@@ -24,10 +24,10 @@ public class Lexer {
             if(c=='/' && s.equals("/")){ //on a un commentaire
                 while (true) {
                     c =(char) pushbackReader.read();
-                    if(c=='\n'){ // si c = \tab fin du comment
+                    if(c=='\n'){ // si c = \n fin du comment
                         return this.getNextSymbol();
                     }
-                    else if (c == '\uFFFF'){
+                    else if (c == '\uFFFF'){ //si la dernière ligne de code est un comment sans \n
                         return null;
                     }
                 }
@@ -119,6 +119,21 @@ public class Lexer {
             String[]  keywords = {"free", "struct", "for","def", "final", "if", "else", "while","return"}; //pour les Keywords
             for (int i=0; i< keywords.length; i++ ){
                 if(s.compareTo(keywords[i])==0){
+
+                    if(s.equals("def")){
+                        return new Symbol("KeywordMethod");
+
+                    } else if (s.equals("if") || s.equals("else")){
+                        return new Symbol("KeywordCondition");
+
+                    }else if(s.equals("while")){
+                        return new Symbol("KeywordWhile");
+                    }else if(s.equals("for")){
+                        return new Symbol("KeywordFor");
+                    }
+                    else if (s.equals("return")){
+                        return new Symbol("KeywordReturn");
+                    }
                     return new Symbol("Keyword", s);
                 }
             }
@@ -136,11 +151,26 @@ public class Lexer {
             }
             return new Symbol("Identifier",s);
         }
-        else if( c== '(' || c==')' || c=='{' || c=='}' || c== '[' || c==']' ||c =='.' || c==';' || c==','){
+        else if( c== '[' || c==']' ||c =='.' || c==';'){
             String s="";
             s=s+c;
             return new Symbol("SpecialCharacter", s);
-        } // specials characters: () [] {} . ; ,
+        }
+        else if (c=='('){
+            return new Symbol("OpenParenthesis");
+        }
+        else if (c==')'){
+            return new Symbol("CloseParenthesis");
+        }
+        else if(c==','){
+            return new Symbol("Comma");
+        }
+        else if(c=='}'){
+            return new Symbol("ClosingHook");
+        }
+        else if (c=='{'){
+            return new Symbol("OpeningHook");
+        }// specials characters: () [] {} . ; ,
         else if( c== '='){ // si =
             String s="";
             s = s +c;

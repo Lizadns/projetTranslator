@@ -16,8 +16,5 @@ public class Type {
         this.type=type;
         this.value=value;
     }
-    static Type parseType() throws ParserException, IOException {
-        Symbol type = match2("Identifier","BaseType");    //mais aussi basetype, est ce que faire 1 autref fonction match avec 2 arguments?
-        return new Type(type.type,type.value);
-    }
+
 }
