@@ -92,7 +92,7 @@ public class Parser {
     public static ArrayList<BlockInstruction>  parseBlock() throws IOException {
         ArrayList<BlockInstruction> blockInstructions = new ArrayList<>();
         match("OpeningHook");
-        while(!Parser.getLookahead().type.equals("ClosingHook") && !Parser.getLookahead().equals(null)) {
+        while(!lookahead.type.equals("ClosingHook") && !lookahead.equals(null)) {
             BlockInstruction instruction = parseSingleInstruction();
             blockInstructions.add(instruction);
         }
