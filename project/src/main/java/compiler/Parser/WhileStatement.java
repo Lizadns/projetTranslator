@@ -1,7 +1,14 @@
 package compiler.Parser;
 
+import java.util.ArrayList;
+
 public class WhileStatement {
     Expression expression;
 
-    BlockInstruction body;
+    ArrayList<BlockInstruction> body;
+
+    public WhileStatement(Expression expression, ArrayList<BlockInstruction> body){
+        this.expression=expression;
+        this.body=body;
+    }
 }
