@@ -18,7 +18,7 @@ public class Parser {
     }
 
     public static Symbol match(String type) throws ParserException, IOException {
-        if(lookahead.type!=type) {
+        if(!lookahead.type.equals(type)) {
             throw new ParserException("No match");
         } else {
             Symbol matchingSymbol = lookahead;
@@ -28,7 +28,7 @@ public class Parser {
     }
 
     public static Symbol match2(String type1, String type2) throws ParserException, IOException {
-        if(lookahead.type!=type1 && lookahead.type!=type2) {
+        if(!lookahead.type.equals(type1) && !lookahead.type.equals(type2)) {
             throw new ParserException("No match");
         } else {
             Symbol matchingSymbol = lookahead;
