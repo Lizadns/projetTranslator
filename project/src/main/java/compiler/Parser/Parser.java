@@ -5,6 +5,9 @@ import compiler.Lexer.Symbol;
 import jdk.nashorn.internal.runtime.ParserException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+
+import compiler.Parser.Program;
 
 public class Parser {
     static Lexer lexer;
@@ -35,5 +38,19 @@ public class Parser {
             lookahead = lexer.getNextSymbol();
             return matchingSymbol;
         }
+    }
+
+    public static Program parseProgram() throws ParserException{
+        ArrayList<Declaration> declarations = parseDeclaration();
+        ArrayList<Statement> statements= parseStatement();
+        return new Program(declarations, statements);
+    }
+
+    public static ArrayList<Declaration> parseDeclaration() throws ParserException{
+        ArrayList<Declaration> declarations = new ArrayList<>();
+
+    }
+    public static ArrayList<Statement> parseStatement() throws ParserException{
+        ArrayList<Statement> statements = new ArrayList<>();
     }
 }

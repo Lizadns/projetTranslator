@@ -2,8 +2,8 @@ package compiler.Lexer;
 
 public class Symbol {
 
-    String type="";
-    String value="";
+    public String type="";
+    public String value="";
 
     public Symbol(String t){
         type =t;
