@@ -1,7 +1,11 @@
 package compiler.Parser;
 
+import java.util.ArrayList;
+
 public class IfStatement {
     Expression expression;
 
-    BlockInstruction body;
+    ArrayList<BlockInstruction> body_if;
+    ArrayList<BlockInstruction> body_else;
+
 }

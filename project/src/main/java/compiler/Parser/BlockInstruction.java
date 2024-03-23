@@ -8,4 +8,5 @@ public class BlockInstruction {
     ForStatement forStatement;
     VariableDeclaration variableDeclaration;
     ReturnStatement returnStatement;
+    GlobalDeclaration localdeclaration;
 }

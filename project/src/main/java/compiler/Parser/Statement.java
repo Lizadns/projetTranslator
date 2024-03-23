@@ -8,5 +8,5 @@ public class Statement {
     WhileStatement whileStatement;
     ForStatement forStatement;
     VariableDeclaration variableDeclaration;
-    ReturnStatement returnStatement;
+    GlobalDeclaration localdeclaration;
 }

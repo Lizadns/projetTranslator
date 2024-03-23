@@ -6,9 +6,6 @@ public class Method {
     Type returnType;
     String nameMethod;
     ArrayList<Param> params;
-
-    BlockInstruction body;
-
-
+    ArrayList<BlockInstruction> body;
 
 }

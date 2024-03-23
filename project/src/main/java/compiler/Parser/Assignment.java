@@ -1,6 +1,8 @@
 package compiler.Parser;
 
 public class Assignment {
-    Type identifier;
+    StructFieldAccess structFieldAccess;
+    ArrayElementAccess arrayElementAccess;
+    Variable variable;
     Expression expression;
 }
