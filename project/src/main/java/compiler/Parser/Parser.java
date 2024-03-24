@@ -296,35 +296,104 @@ public class Parser {
         ArrayList<BlockInstruction> blockInstructions = new ArrayList<>();
         match("OpeningHook");
         while(!lookahead.type.equals("ClosingHook") && !lookahead.equals(null)) {
-            if(lookahead.type.equals("KeywordCondition")){
-                IfStatement statement = parseIfStatement();
-                blockInstructions.add(new BlockInstruction(statement));
+            if (lookahead.type.equals("KeywordCondition")){
+                IfStatement ifStatement = parseIfStatement();
+                blockInstructions.add(new BlockInstruction(ifStatement));
             }else if (lookahead.type.equals("KeywordWhile")){
-                WhileStatement statement = parseWhileStatement();
-                blockInstructions.add(new BlockInstruction(statement));
+                WhileStatement whileStatement = parseWhileStatement();
+                blockInstructions.add(new BlockInstruction(whileStatement));
             }
             else if (lookahead.type.equals("KeywordFor")){
-                ForStatement statement = parseForStatement();
-                blockInstructions.add(new BlockInstruction(statement));
+                ForStatement forStatement = parseForStatement();
+                blockInstructions.add(new BlockInstruction(forStatement));
+            }else if(lookahead.value.equals("return")){
+                matchValue("return");
+                ReturnStatement returnStatement = parseReturnStatement();
+                blockInstructions.add(new BlockInstruction(returnStatement));
             }
-            else if (lookahead.type.equals("KeywordReturn")){
-                ReturnStatement statement = parseReturnStatement();
-                blockInstructions.add(new BlockInstruction(statement));
-            }else if (lookahead.type.equals("Identifier") || lookahead.type.equals("BaseType")){
-                if(lookahead.type.equals("Identifier")){
-                    String IdentifierName = lookahead.value;
-                    match("Identifier");
-                    if(lookahead.type.equals("OpenParenthesis")){
-                        FunctionCall functionCall = parseFunctionCall(IdentifierName);
-                        blockInstructions.add(new BlockInstruction(functionCall));
-                    }else if (lookahead.type.equals("[")){
-                        match("SpecialCharacter");//CHANGER DANS LE LEXER en OPENCROCHET
-                        match("SpecialCharacter");//CLOSECROCHET
-                        if(lookahead.type.equals("Indentifier")){
-                            //A FINIR
+            else if (lookahead.type.equals("Identifier")){
+                String identifierName = lookahead.value;
+                match("Identifier");
+                if(lookahead.type.equals("OpenParenthesis")){// Identifier(
+                    FunctionCall functionCall = parseFunctionCall(identifierName);
+                    blockInstructions.add(new BlockInstruction(functionCall));
+                }else if (lookahead.type.equals("AssignmentOperator")||lookahead.value.equals(".")){
+                    //si . dire que c'est un tableau dans parseAssignement
+                    Assignment assignment;
+                    if(lookahead.value.equals(".")){//Identifier.
+                        assignment = parseAssignment(identifierName, false, true, null);
+                    }else{//Identifier =
+                        assignment = parseAssignment(identifierName, false, false, null);
+                    }
+                    blockInstructions.add(new BlockInstruction(assignment));
+
+                }
+                else if(lookahead.type.equals("Identifier")){//Identifier Identifier
+                    Symbol nameVariable = match("Identifier");
+                    if(lookahead.type.equals("AssignmentOperator")){//Identifier Identifier = -> GD
+                        GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration2(identifierName, nameVariable.value,false);
+                        blockInstructions.add(new BlockInstruction(globalDeclaration));
+                    }
+                    else if (lookahead.value.equals(";")){//Identifier Identifier ; -> VD
+                        VariableDeclaration variableDeclaration = parseVariableDeclaration2(identifierName,nameVariable.value,false);
+                        blockInstructions.add(new BlockInstruction(variableDeclaration));
+                    }
+                }else if(lookahead.value.equals("[")){//Identifier [
+                    matchValue("[");
+                    if(lookahead.value.equals("]")){
+                        matchValue("]");
+                        if(lookahead.type.equals("Identifier")){//Identifier [] Identifier -> Declaration
+                            Symbol nameVariable = match("Identifier");
+                            if (lookahead.type.equals("AssignmentOperator")){// Identifier [] Identifier = -> GV
+                                GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration2(identifierName, nameVariable.value,true);
+                                blockInstructions.add(new BlockInstruction(globalDeclaration));
+                            }else if(lookahead.value.equals(";")) {
+                                VariableDeclaration variableDeclaration = parseVariableDeclaration2(identifierName,nameVariable.value,true);
+                                blockInstructions.add(new BlockInstruction(variableDeclaration));
+                            }
+                        }
+                    }else if(!lookahead.value.equals("]")){//Identifier [3
+                        Expression expression = parseExpression();
+                        matchValue("]");//Identifier[expression]
+                        if(lookahead.value.equals(".")){//Identifier[3].
+                            Assignment assignment = parseAssignment(identifierName,true,true,expression);
+                            blockInstructions.add(new BlockInstruction(assignment));
+                        }else if(lookahead.type.equals("AssignmentOperator")){//Identifier [expression] = ..;
+                            Assignment assignment = parseAssignment(identifierName,true,false,expression);
+                            blockInstructions.add(new BlockInstruction(assignment));
                         }
                     }
                 }
+
+            }else if( lookahead.type.equals("BaseType")){
+                Symbol type = lookahead;
+                match("BaseType");
+                if(lookahead.type.equals("Identifier")){//BaseType Identifier
+                    Symbol nameVariable = match("Identifier");
+                    if(lookahead.type.equals("AssignmentOperator")){//BaseType Identifier = -> GD
+                        GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration2(type.value, nameVariable.value,false);
+                        blockInstructions.add(new BlockInstruction(globalDeclaration));
+                    }
+                    else if (lookahead.value.equals(";")){//BaseType Identifier ; -> VD
+                        VariableDeclaration variableDeclaration = parseVariableDeclaration2(type.value,nameVariable.value,false);
+                        blockInstructions.add(new BlockInstruction(variableDeclaration));
+                    }
+
+                }else if(lookahead.value.equals("[")){
+                    match("[");
+                    match("]");
+                    Symbol nameVariable = match("Identifier");
+                    if(lookahead.value.equals(";")){//BaseType[] Identifier ;
+                        VariableDeclaration variableDeclaration = parseVariableDeclaration2(type.value,nameVariable.value,true);
+                        blockInstructions.add(new BlockInstruction(variableDeclaration));
+                    }else if(lookahead.type.equals("AssignmentOperator")){//BaseType[] Identifier =
+                        GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration2(type.value, nameVariable.value,false);
+                        blockInstructions.add(new BlockInstruction(globalDeclaration));}
+
+                }
+            }
+            else{
+                throw new ParserException("No match");
             }
         }
         match("ClosingHook");
