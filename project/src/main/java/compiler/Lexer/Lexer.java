@@ -165,12 +165,19 @@ public class Lexer {
         else if(c==','){
             return new Symbol("Comma");
         }
-        else if(c=='}'){
+        else if(c==']'){
             return new Symbol("ClosingHook");
         }
-        else if (c=='{'){
+        else if (c=='['){
             return new Symbol("OpeningHook");
-        }// specials characters: () [] {} . ; ,
+        }
+        else if(c=='}'){
+            return new Symbol("ClosingBrace");
+        }
+        else if (c=='{'){
+            return new Symbol("OpeningBrace");
+        }
+        // specials characters: () [] {} . ; ,
         else if( c== '='){ // si =
             String s="";
             s = s +c;
