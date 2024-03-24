@@ -65,7 +65,21 @@ public class Parser {
             } else if (lookahead.type.equals("struct")) {
                 declarations.add(parseStructDeclaration());
             } else {
-                declarations.add(parseGlobalVariableDeclaration());
+                Symbol ancien = lookahead;
+                Type type = parseType();
+                if (lookahead.type.equals("AssignmentOperator")){
+                    lookahead= ancien;
+                    break;
+                }
+                else {
+                    Symbol identifier = match("Identifier");
+                    if (lookahead.type.equals("AssignmentOperator")) {
+                        declarations.add(parseGlobalVariableDeclaration(type, identifier));
+                    } else {
+                        lookahead = ancien;
+                        break;
+                    }
+                }
             }
         }
         return declarations;
@@ -77,17 +91,34 @@ public class Parser {
         Symbol identifier = match("Identifier");
         match("AssignmentOperator");
         Expression expression = parseExpression();
+        matchValue(";");
         return new Declaration(new ConstantDeclaration(type,identifier.value,expression));
     }
     public static Declaration parseStructDeclaration() throws ParserException, IOException {
         matchValue("struct");
         Symbol identifier = match("Identifier");
-
-
+        match("OpeningBrace");
+        ArrayList<StructField> structFields = parseStructFields();
+        match("ClosingBrace");
+        return new Declaration(new StructDeclaration(identifier.value, structFields));
     }
 
-    public static Declaration parseGlobalVariableDeclaration() throws ParserException, IOException {
+    public static ArrayList<StructField> parseStructFields() throws ParserException, IOException{
+        ArrayList<StructField> structFields= new ArrayList<>();
+        while (!lookahead.value.equals("}")){
+            Type type = parseType();
+            Symbol identifier = match("Identifier");
+            matchValue(";");
+            structFields.add(new StructField(type, identifier.value));
+        }
+        return structFields;
+    }
 
+    public static Declaration parseGlobalVariableDeclaration(Type type, Symbol identifier) throws ParserException, IOException {
+        match("AssignmentOperator");
+        Expression expression = parseExpression();
+        matchValue(";");
+        return new Declaration(new GlobalDeclaration(type, identifier.value, expression));
     }
 
     public static Expression parseExpression() throws ParserException, IOException{
