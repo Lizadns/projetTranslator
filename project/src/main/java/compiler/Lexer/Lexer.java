@@ -121,18 +121,18 @@ public class Lexer {
                 if(s.compareTo(keywords[i])==0){
 
                     if(s.equals("def")){
-                        return new Symbol("KeywordMethod");
+                        return new Symbol("KeywordMethod",s);
 
                     } else if (s.equals("if") || s.equals("else")){
-                        return new Symbol("KeywordCondition");
+                        return new Symbol("KeywordCondition",s);
 
                     }else if(s.equals("while")){
-                        return new Symbol("KeywordWhile");
+                        return new Symbol("KeywordWhile",s);
                     }else if(s.equals("for")){
-                        return new Symbol("KeywordFor");
+                        return new Symbol("KeywordFor",s);
                     }
                     else if (s.equals("return")){
-                        return new Symbol("KeywordReturn");
+                        return new Symbol("KeywordReturn",s);
                     }
                     return new Symbol("Keyword", s);
                 }
@@ -157,25 +157,39 @@ public class Lexer {
             return new Symbol("SpecialCharacter", s);
         }
         else if (c=='('){
-            return new Symbol("OpenParenthesis");
+            String s="";
+            s=s+c;
+            return new Symbol("OpenParenthesis",s);
         }
         else if (c==')'){
-            return new Symbol("CloseParenthesis");
+            String s="";
+            s=s+c;
+            return new Symbol("CloseParenthesis",s);
         }
         else if(c==','){
-            return new Symbol("Comma");
+            String s="";
+            s=s+c;
+            return new Symbol("Comma",s);
         }
         else if(c==']'){
-            return new Symbol("ClosingHook");
+            String s="";
+            s=s+c;
+            return new Symbol("ClosingHook",s);
         }
         else if (c=='['){
-            return new Symbol("OpeningHook");
+            String s="";
+            s=s+c;
+            return new Symbol("OpeningHook",s);
         }
         else if(c=='}'){
-            return new Symbol("ClosingBrace");
+            String s="";
+            s=s+c;
+            return new Symbol("ClosingBrace",s);
         }
         else if (c=='{'){
-            return new Symbol("OpeningBrace");
+            String s="";
+            s=s+c;
+            return new Symbol("OpeningBrace",s);
         }
         // specials characters: () [] {} . ; ,
         else if( c== '='){ // si =
