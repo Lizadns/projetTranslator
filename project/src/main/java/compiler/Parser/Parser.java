@@ -31,6 +31,16 @@ public class Parser {
         }
     }
 
+    public static Symbol matchValue(String value) throws ParserException, IOException {
+        if(!lookahead.value.equals(value)) {
+            throw new ParserException("No match");
+        } else {
+            Symbol matchingSymbol = lookahead;
+            lookahead = lexer.getNextSymbol();
+            return matchingSymbol;
+        }
+    }
+
     public static Symbol match2(String type1, String type2) throws ParserException, IOException {
         if(!lookahead.type.equals(type1) && !lookahead.type.equals(type2)) {
             throw new ParserException("No match");
@@ -41,19 +51,49 @@ public class Parser {
         }
     }
 
-    public static Program parseProgram() throws ParserException{
+    public static Program parseProgram() throws ParserException, IOException{
         ArrayList<Declaration> declarations = parseDeclaration();
         ArrayList<Statement> statements= parseStatement();
         return new Program(declarations, statements);
     }
 
-    public static ArrayList<Declaration> parseDeclaration() throws ParserException{
+    public static ArrayList<Declaration> parseDeclaration() throws ParserException, IOException{
         ArrayList<Declaration> declarations = new ArrayList<>();
+        while (lookahead.value.equals("struct") || lookahead.value.equals("final") || lookahead.type.equals("BaseType") || lookahead.type.equals("Identifier")){
+            if (lookahead.type.equals("final")) {
+                declarations.add(parseConstantDeclaration());
+            } else if (lookahead.type.equals("struct")) {
+                declarations.add(parseStructDeclaration());
+            } else {
+                declarations.add(parseGlobalVariableDeclaration());
+            }
+        }
+        return declarations;
 
     }
-    public static ArrayList<Statement> parseStatement() throws ParserException{
-        ArrayList<Statement> statements = new ArrayList<>();
+    public static Declaration parseConstantDeclaration() throws ParserException, IOException {
+        matchValue("final");
+        Type type = parseType();
+        Symbol identifier = match("Identifier");
+        match("AssignmentOperator");
+        Expression expression = parseExpression();
+        return new Declaration(new ConstantDeclaration(type,identifier.value,expression));
     }
+    public static Declaration parseStructDeclaration() throws ParserException, IOException {
+        matchValue("struct");
+        Symbol identifier = match("Identifier");
+
+
+    }
+
+    public static Declaration parseGlobalVariableDeclaration() throws ParserException, IOException {
+
+    }
+
+    public static Expression parseExpression() throws ParserException, IOException{
+
+    }
+
 
     static Type parseType() throws ParserException, IOException {
         Symbol type = match2("Identifier","BaseType");    //mais aussi basetype, est ce que faire 1 autref fonction match avec 2 arguments?
