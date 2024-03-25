@@ -17,7 +17,7 @@ public class Parser {
         this.lexer=lexer;
     }
 
-    public Program main() throws ParserException, IOException {
+    public Program parse() throws ParserException, IOException {
         lookahead = lexer.getNextSymbol(); // Initialise le symbole de lookahead avec le premier symbole du flux d'entrée
         // Commence l'analyse syntaxique du programme
         return parseProgram();
