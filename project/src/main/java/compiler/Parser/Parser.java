@@ -64,13 +64,13 @@ public class Parser {
     }
 
     public static Program parseProgram() throws ParserException, IOException{
-        ArrayList<Declaration> declarations = parseDeclaration();
-        ArrayList<Statement> statements= parseStatement();
+        Node declarations = parseDeclaration();
+        Node statements= parseStatement();
         return new Program(declarations, statements);
     }
 
-    public static ArrayList<Declaration> parseDeclaration() throws ParserException, IOException{
-        ArrayList<Declaration> declarations = new ArrayList<>();
+    public static Declaration parseDeclaration() throws ParserException, IOException{
+        ArrayList<Node> declarations = new ArrayList<>();
         while (lookahead!=null && ( lookahead.value.equals("struct") || lookahead.value.equals("final") || lookahead.type.equals("BaseType") || lookahead.type.equals("Identifier"))){
             if (lookahead.value.equals("final")) {
                 declarations.add(parseConstantDeclaration());
@@ -79,23 +79,26 @@ public class Parser {
             } else {
                 Symbol ancien = lookahead;
                 Symbol s = match2("Identifier","BaseType");
-                if(lookahead.type.equals("[")){
-                    match("OpeningHook");
-                    if(!lookahead.type.equals("]")){ //si a[3] par ex.
+                if(lookahead.value.equals("[")){
+                    matchValue("[");
+                    if(!lookahead.value.equals("]")){ //si a[3] par ex.
                         Lexer.addAtBeginning(lookahead.value);
+                        Lexer.addAtBeginning("[");
                         lookahead=ancien;
                         break;
                     }
                     else{
-                        Lexer.addAtBeginning(lookahead.value);
+                        Lexer.addAtBeginning("]");
+                        Lexer.addAtBeginning("[");
                         lookahead=ancien;
                     }
                 }
-                Lexer.addAtBeginning(lookahead.value);
-                lookahead=ancien;
-
+                else {
+                    Lexer.addAtBeginning(lookahead.value);
+                    lookahead = ancien;
+                }
                 Type type = parseType2();
-                if (lookahead.type.equals("AssignmentOperator")){ //si direct "a =1;"
+                if (lookahead.type.equals("AssignmentOperator")||lookahead.value.equals(".")){ //si direct "a =1;"
                     Lexer.addAtBeginning(lookahead.value);
                     lookahead= ancien;
                     break;
@@ -112,25 +115,25 @@ public class Parser {
                 }
             }
         }
-        return declarations;
+        return new Declaration(declarations);
 
     }
-    public static Declaration parseConstantDeclaration() throws ParserException, IOException {
+    public static ConstantDeclaration parseConstantDeclaration() throws ParserException, IOException {
         matchValue("final");
         Type type = parseBaseType(); //seulement des basesType pour les final declaration
         Symbol identifier = match("Identifier");
         match("AssignmentOperator");
         Expression expression = parseExpression();
         matchValue(";");
-        return new Declaration(new ConstantDeclaration(type,identifier.value,expression));
+        return new ConstantDeclaration(type,identifier.value,expression);
     }
-    public static Declaration parseStructDeclaration() throws ParserException, IOException {
+    public static StructDeclaration parseStructDeclaration() throws ParserException, IOException {
         matchValue("struct");
         Symbol identifier = match("Identifier");
         match("OpeningBrace");
         ArrayList<StructField> structFields = parseStructFields();
         match("ClosingBrace");
-        return new Declaration(new StructDeclaration(identifier.value, structFields));
+        return new StructDeclaration(identifier.value, structFields);
     }
 
     public static ArrayList<StructField> parseStructFields() throws ParserException, IOException{
@@ -145,11 +148,11 @@ public class Parser {
     }
 
 
-    public static Declaration parseGlobalVariableDeclaration(Type type, Symbol identifier) throws ParserException, IOException {
+    public static GlobalDeclaration parseGlobalVariableDeclaration(Type type, Symbol identifier) throws ParserException, IOException {
         match("AssignmentOperator");
         Expression expression = parseExpression();
         matchValue(";");
-        return new Declaration(new GlobalDeclaration(type, identifier.value, expression));
+        return new GlobalDeclaration(type, identifier.value, expression);
     }
 
     public static Expression parseExpression() throws ParserException, IOException {
@@ -231,29 +234,29 @@ public class Parser {
         }
     }
 
-    public static ArrayList<Statement> parseStatement() throws ParserException, IOException {
-        ArrayList<Statement> statements = new ArrayList<>();
+    public static Statement parseStatement() throws ParserException, IOException {
+        ArrayList<Node> statements = new ArrayList<>();
         while(lookahead!=null){
             if(lookahead.value.equals("def")){
                 Method method = parseMethod();
-                statements.add(new Statement(method));
+                statements.add(method);
             }
             else if (lookahead.type.equals("KeywordCondition")){
                 IfStatement ifStatement = parseIfStatement();
-                statements.add(new Statement(ifStatement));
+                statements.add(ifStatement);
             }else if (lookahead.type.equals("KeywordWhile")){
                 WhileStatement whileStatement = parseWhileStatement();
-                statements.add(new Statement(whileStatement));
+                statements.add(whileStatement);
             }
             else if (lookahead.type.equals("KeywordFor")){
                 ForStatement forStatement = parseForStatement();
-                statements.add(new Statement(forStatement));
+                statements.add(forStatement);
             }
             else if (lookahead.type.equals("Identifier")){
-                Type name = parseType();
+                Symbol name = match("Identifier");
                 if(lookahead.type.equals("OpenParenthesis")){// Identifier(
                     FunctionCall functionCall = parseFunctionCall(name.value);
-                    statements.add(new Statement(functionCall));
+                    statements.add(functionCall);
                 }else if (lookahead.type.equals("AssignmentOperator")||lookahead.value.equals(".")){
                     //si . dire que c'est un tableau dans parseAssignement
                     Assignment assignment;
@@ -262,18 +265,20 @@ public class Parser {
                     }else{//Identifier =
                         assignment = parseAssignment(name.value, false, false, null);
                     }
-                    statements.add(new Statement(assignment));
+                    statements.add(assignment);
 
                 }
                 else if(lookahead.type.equals("Identifier")){//Identifier Identifier
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.type.equals("AssignmentOperator")){//Identifier Identifier = -> GD
-                        Declaration globalDeclaration = parseGlobalVariableDeclaration(name, nameVariable);
-                        statements.add(new Statement(globalDeclaration));
+                        Type type = new Type(name.value);
+                        GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
+                        statements.add(globalDeclaration);
                     }
                     else if (lookahead.value.equals(";")){//Identifier Identifier ; -> VD
-                        Declaration variableDeclaration = parseVariableDeclaration(name,nameVariable.value,false);
-                        statements.add(new Statement(variableDeclaration));
+                        Type type = new Type(name.value);
+                        VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,false);
+                        statements.add(variableDeclaration);
                     }
                 }else if(lookahead.value.equals("[")){//Identifier [
                     matchValue("[");
@@ -283,11 +288,13 @@ public class Parser {
                             Symbol nameVariable = match("Identifier");
                             if (lookahead.type.equals("AssignmentOperator")){// Identifier [] Identifier = -> GV
                                 name.value = name.value + "[]";
-                                Declaration globalDeclaration = parseGlobalVariableDeclaration(name, nameVariable);
-                                statements.add(new Statement(globalDeclaration));
+                                Type type = new Type(name.value);
+                                GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
+                                statements.add(globalDeclaration);
                             }else if(lookahead.value.equals(";")) {
-                                Declaration variableDeclaration = parseVariableDeclaration(name,nameVariable.value,true);
-                                statements.add(new Statement(variableDeclaration));
+                                Type type = new Type(name.value);
+                                VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,true);
+                                statements.add(variableDeclaration);
                             }
                         }
                     }else{//Identifier [3
@@ -295,10 +302,10 @@ public class Parser {
                         matchValue("]");//Identifier[expression]
                         if(lookahead.value.equals(".")){//Identifier[3].
                             Assignment assignment = parseAssignment(name.value,true,true,expression);
-                            statements.add(new Statement(assignment));
+                            statements.add(assignment);
                         }else if(lookahead.type.equals("AssignmentOperator")){//Identifier [expression] = ..;
                             Assignment assignment = parseAssignment(name.value,true,false,expression);
-                            statements.add(new Statement(assignment));
+                            statements.add(assignment);
                         }
                     }
                 }
@@ -308,12 +315,12 @@ public class Parser {
                 if(lookahead.type.equals("Identifier")){//BaseType Identifier
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.type.equals("AssignmentOperator")){//BaseType Identifier = -> GD
-                        Declaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
-                        statements.add(new Statement(globalDeclaration));
+                        GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
+                        statements.add(globalDeclaration);
                     }
                     else if (lookahead.value.equals(";")){//BaseType Identifier ; -> VD
-                        Declaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,false);
-                        statements.add(new Statement(variableDeclaration));
+                        VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,false);
+                        statements.add(variableDeclaration);
                     }
 
                 }else if(lookahead.value.equals("[")){
@@ -321,12 +328,12 @@ public class Parser {
                     match("]");
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.value.equals(";")){//BaseType[] Identifier ;
-                        Declaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,true);
-                        statements.add(new Statement(variableDeclaration));
+                        VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,true);
+                        statements.add(variableDeclaration);
                     }else if(lookahead.type.equals("AssignmentOperator")){//BaseType[] Identifier =
                         type.value = type.value + "[]";
-                        Declaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
-                        statements.add(new Statement(globalDeclaration));
+                        GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
+                        statements.add(globalDeclaration);
                     }
 
                 }
@@ -334,7 +341,7 @@ public class Parser {
             else{
                 throw new ParserException("No match "+ lookahead.type + " " + lookahead.value);
             }
-        } return statements;
+        } return new Statement(statements);
     }
 
     static Assignment parseAssignment(String variableName, Boolean isAnArray, Boolean isAnFildAcces, Expression expressionArray) throws IOException {
@@ -455,11 +462,11 @@ public class Parser {
                 else if(lookahead.type.equals("Identifier")){//Identifier Identifier
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.type.equals("AssignmentOperator")){//Identifier Identifier = -> GD
-                        Declaration globalDeclaration = parseGlobalVariableDeclaration(identifierName, nameVariable);
+                        GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(identifierName, nameVariable);
                         blockInstructions.add(new BlockInstruction(globalDeclaration));
                     }
                     else if (lookahead.value.equals(";")){//Identifier Identifier ; -> VD
-                        Declaration variableDeclaration = parseVariableDeclaration(identifierName,nameVariable.value,false);
+                        VariableDeclaration variableDeclaration = parseVariableDeclaration(identifierName,nameVariable.value,false);
                         blockInstructions.add(new BlockInstruction(variableDeclaration));
                     }
                 }else if(lookahead.value.equals("[")){//Identifier [
@@ -470,10 +477,10 @@ public class Parser {
                             Symbol nameVariable = match("Identifier");
                             if (lookahead.type.equals("AssignmentOperator")){// Identifier [] Identifier = -> GV
                                 identifierName.value = identifierName.value + "[]";
-                                Declaration globalDeclaration = parseGlobalVariableDeclaration(identifierName, nameVariable);
+                                GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(identifierName, nameVariable);
                                 blockInstructions.add(new BlockInstruction(globalDeclaration));
                             }else if(lookahead.value.equals(";")) {
-                                Declaration variableDeclaration = parseVariableDeclaration(identifierName,nameVariable.value,true);
+                                VariableDeclaration variableDeclaration = parseVariableDeclaration(identifierName,nameVariable.value,true);
                                 blockInstructions.add(new BlockInstruction(variableDeclaration));
                             }
                         }
@@ -495,11 +502,11 @@ public class Parser {
                 if(lookahead.type.equals("Identifier")){//BaseType Identifier
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.type.equals("AssignmentOperator")){//BaseType Identifier = -> GD
-                        Declaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
+                        GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
                         blockInstructions.add(new BlockInstruction(globalDeclaration));
                     }
                     else if (lookahead.value.equals(";")){//BaseType Identifier ; -> VD
-                        Declaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,false);
+                        VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,false);
                         blockInstructions.add(new BlockInstruction(variableDeclaration));
                     }
 
@@ -508,11 +515,11 @@ public class Parser {
                     match("]");
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.value.equals(";")){//BaseType[] Identifier ;
-                        Declaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,true);
+                        VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,true);
                         blockInstructions.add(new BlockInstruction(variableDeclaration));
                     }else if(lookahead.type.equals("AssignmentOperator")){//BaseType[] Identifier =
                         type.value = type.value + "[]";
-                        Declaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
+                        GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
                         blockInstructions.add(new BlockInstruction(globalDeclaration));
                     }
 
@@ -557,12 +564,12 @@ public class Parser {
         return arguments;
     }
 
-    public static Declaration parseVariableDeclaration(Type type, String nameVariable,Boolean isAnArray) throws ParserException, IOException{
+    public static VariableDeclaration parseVariableDeclaration(Type type, String nameVariable,Boolean isAnArray) throws ParserException, IOException{
         matchValue(";");
         if(isAnArray){
             type.value = type.value + "[]";
         }
-        return new Declaration(new VariableDeclaration(type, new Variable(nameVariable)));
+        return new VariableDeclaration(type, new Variable(nameVariable));
 
     }
 

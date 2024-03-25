@@ -4,9 +4,9 @@ import java.util.ArrayList;
 
 public class Program extends Node {
 
-    public Program(ArrayList<Declaration> d, ArrayList<Statement> s){
+    public Program(Node d, Node s){
         super("Program",new ArrayList<>());
-        this.children.addAll(d);
-        this.children.addAll(s);
+        this.children.add(d);
+        this.children.add(s);
     }
 }
