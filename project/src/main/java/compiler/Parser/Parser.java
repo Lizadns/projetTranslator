@@ -3,7 +3,6 @@ package compiler.Parser;
 
 import compiler.Lexer.Lexer;
 import compiler.Lexer.Symbol;
-import jdk.nashorn.internal.runtime.ParserException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,15 +16,15 @@ public class Parser {
         this.lexer=lexer;
     }
 
-    public Program parse() throws ParserException, IOException {
+    public Program getAST() throws IOException {
         lookahead = lexer.getNextSymbol(); // Initialise le symbole de lookahead avec le premier symbole du flux d'entrée
         // Commence l'analyse syntaxique du programme
         return parseProgram();
     }
 
-    public static Symbol match(String type) throws ParserException, IOException {
+    public static Symbol match(String type) throws IOException {
         if(!lookahead.type.equals(type)) {
-            throw new ParserException("No match " + lookahead.value);
+            throw new RuntimeException("No match " + lookahead.value);
         } else {
             Symbol matchingSymbol = lookahead;
             lookahead = lexer.getNextSymbol();
@@ -33,9 +32,9 @@ public class Parser {
         }
     }
 
-    public static Symbol matchValue(String value) throws ParserException, IOException {
+    public static Symbol matchValue(String value) throws IOException {
         if(!lookahead.value.equals(value)) {
-            throw new ParserException("No match " + lookahead.value);
+            throw new RuntimeException("No match " + lookahead.value);
         } else {
             Symbol matchingSymbol = lookahead;
             lookahead = lexer.getNextSymbol();
@@ -43,9 +42,9 @@ public class Parser {
         }
     }
 
-    public static Symbol match2(String type1, String type2) throws ParserException, IOException {
+    public static Symbol match2(String type1, String type2) throws IOException {
         if(!lookahead.type.equals(type1) && !lookahead.type.equals(type2)) {
-            throw new ParserException("No match " + lookahead.value + " or " + lookahead.type);
+            throw new RuntimeException("No match " + lookahead.value + " or " + lookahead.type);
         } else {
             Symbol matchingSymbol = lookahead;
             lookahead = lexer.getNextSymbol();
@@ -53,9 +52,9 @@ public class Parser {
         }
     }
 
-    public static Symbol match4(String type1, String type2,String type3,String type4) throws ParserException, IOException {
+    public static Symbol match4(String type1, String type2,String type3,String type4) throws IOException {
         if(!lookahead.type.equals(type1) && !lookahead.type.equals(type2)&& !lookahead.type.equals(type3)&& !lookahead.type.equals(type4)) {
-            throw new ParserException("No match " + lookahead.value);
+            throw new RuntimeException("No match " + lookahead.value);
         } else {
             Symbol matchingSymbol = lookahead;
             lookahead = lexer.getNextSymbol();
@@ -63,13 +62,13 @@ public class Parser {
         }
     }
 
-    public static Program parseProgram() throws ParserException, IOException{
+    public static Program parseProgram() throws IOException{
         Node declarations = parseDeclaration();
         Node statements= parseStatement();
         return new Program(declarations, statements);
     }
 
-    public static Declaration parseDeclaration() throws ParserException, IOException{
+    public static Declaration parseDeclaration() throws IOException{
         ArrayList<Node> declarations = new ArrayList<>();
         while (lookahead!=null && ( lookahead.value.equals("struct") || lookahead.value.equals("final") || lookahead.type.equals("BaseType") || lookahead.type.equals("Identifier"))){
             if (lookahead.value.equals("final")) {
@@ -118,7 +117,7 @@ public class Parser {
         return new Declaration(declarations);
 
     }
-    public static ConstantDeclaration parseConstantDeclaration() throws ParserException, IOException {
+    public static ConstantDeclaration parseConstantDeclaration() throws IOException {
         matchValue("final");
         Type type = parseBaseType(); //seulement des basesType pour les final declaration
         Symbol identifier = match("Identifier");
@@ -127,7 +126,7 @@ public class Parser {
         matchValue(";");
         return new ConstantDeclaration(type,identifier.value,expression);
     }
-    public static StructDeclaration parseStructDeclaration() throws ParserException, IOException {
+    public static StructDeclaration parseStructDeclaration() throws IOException {
         matchValue("struct");
         Symbol identifier = match("Identifier");
         match("OpeningBrace");
@@ -136,7 +135,7 @@ public class Parser {
         return new StructDeclaration(identifier.value, structFields);
     }
 
-    public static ArrayList<StructField> parseStructFields() throws ParserException, IOException{
+    public static ArrayList<StructField> parseStructFields() throws IOException{
         ArrayList<StructField> structFields= new ArrayList<>();
         while (!lookahead.value.equals("}")){
             Type type = parseType2(); //type baseType, struct ou tableaux
@@ -148,14 +147,14 @@ public class Parser {
     }
 
 
-    public static GlobalDeclaration parseGlobalVariableDeclaration(Type type, Symbol identifier) throws ParserException, IOException {
+    public static GlobalDeclaration parseGlobalVariableDeclaration(Type type, Symbol identifier) throws IOException {
         match("AssignmentOperator");
         Expression expression = parseExpression();
         matchValue(";");
         return new GlobalDeclaration(type, identifier.value, expression);
     }
 
-    public static Expression parseExpression() throws ParserException, IOException {
+    public static Expression parseExpression() throws IOException {
         Expression expression = parseTerm();
 
         while (lookahead.type.equals("ArithmeticOperator") || lookahead.type.equals("ComparisonOperator") ||lookahead.type.equals("AndOperator")||lookahead.type.equals("OrOperator") ) {
@@ -168,7 +167,7 @@ public class Parser {
         return expression;
     }
 
-    public static Expression parseTerm() throws ParserException,IOException {
+    public static Expression parseTerm() throws IOException {
         if (lookahead.type.equals("Identifier")) {
             Symbol identifier =match("Identifier");
             if(lookahead.type.equals("OpenParenthesis")){ //Expression Function call
@@ -234,7 +233,7 @@ public class Parser {
         }
     }
 
-    public static Statement parseStatement() throws ParserException, IOException {
+    public static Statement parseStatement() throws IOException {
         ArrayList<Node> statements = new ArrayList<>();
         while(lookahead!=null){
             if(lookahead.value.equals("def")){
@@ -342,7 +341,7 @@ public class Parser {
                 }
             }
             else{
-                throw new ParserException("No match "+ lookahead.type + " " + lookahead.value);
+                throw new RuntimeException("No match "+ lookahead.type + " " + lookahead.value);
             }
         } return new Statement(statements);
     }
@@ -378,17 +377,17 @@ public class Parser {
             return new Assignment(new Variable(variableName),expression);
         }
     }
-    static Type parseType() throws ParserException, IOException {
+    static Type parseType() throws IOException {
         Symbol type = match2("Identifier","BaseType");    //mais aussi basetype, est ce que faire 1 autref fonction match avec 2 arguments?
         return new Type(type.value);
     }
 
-    static Type parseBaseType() throws ParserException, IOException {
+    static Type parseBaseType() throws IOException {
         Symbol type = match("BaseType");
         return new Type(type.value);
     }
 
-    static Type parseType2() throws ParserException, IOException {
+    static Type parseType2() throws IOException {
         Symbol type = match2("Identifier","BaseType");
         if (lookahead.value.equals("[")){
             Symbol open = matchValue("[");
@@ -399,13 +398,13 @@ public class Parser {
         return new Type(type.value);
     }
 
-    static Param parseParam() throws ParserException, IOException {
+    static Param parseParam() throws IOException {
         Type type = parseType2();
         Symbol identifier = match("Identifier");
         return new Param(type,identifier.value);
     }
 
-    static ArrayList<Param> parseParams() throws ParserException, IOException {
+    static ArrayList<Param> parseParams() throws IOException {
         ArrayList<Param> parameters = new ArrayList<>();
         if(!lookahead.value.equals(")")) {
             parameters.add(parseParam());
@@ -416,7 +415,7 @@ public class Parser {
         }
         return parameters;
     }
-    public static Method parseMethod() throws ParserException, IOException {
+    public static Method parseMethod() throws IOException {
         matchValue("def");                 // method commence par def
         Type returnType = parseType();              // ensuite le returnType
         String name = (String)match("Identifier").value; //ensuite le nom de la methode
@@ -529,7 +528,7 @@ public class Parser {
                 }
             }
             else{
-                throw new ParserException("No match " + lookahead.value);
+                throw new RuntimeException("No match " + lookahead.value);
             }
         }
         matchValue("}");
@@ -560,14 +559,14 @@ public class Parser {
     }
 
 
-    public static FunctionCall parseFunctionCall(String nameCall) throws ParserException,IOException {
+    public static FunctionCall parseFunctionCall(String nameCall) throws IOException {
         matchValue("(");
         ArrayList<Argument> arguments = parseArguments();
         matchValue(")");
         return new FunctionCall(nameCall,arguments);
 
     }
-    public static ArrayList<Argument> parseArguments() throws ParserException,IOException {
+    public static ArrayList<Argument> parseArguments() throws IOException {
         ArrayList<Argument> arguments = new ArrayList<>();
         while(!lookahead.value.equals(")") && lookahead!=null){
             Expression expression = parseExpression();
@@ -579,7 +578,7 @@ public class Parser {
         return arguments;
     }
 
-    public static VariableDeclaration parseVariableDeclaration(Type type, String nameVariable,Boolean isAnArray) throws ParserException, IOException{
+    public static VariableDeclaration parseVariableDeclaration(Type type, String nameVariable,Boolean isAnArray) throws IOException{
         matchValue(";");
         if(isAnArray){
             type.value = type.value + "[]";
@@ -588,7 +587,7 @@ public class Parser {
 
     }
 
-    public static IfStatement parseIfStatement() throws ParserException,IOException{
+    public static IfStatement parseIfStatement() throws IOException{
         if(lookahead.value.equals("if")){
             matchValue("if");
             matchValue("(");
@@ -603,7 +602,7 @@ public class Parser {
         }
     }
 
-    public static ForStatement parseForStatement() throws ParserException,IOException{
+    public static ForStatement parseForStatement() throws IOException{
         matchValue("for");
         matchValue("(");
         Assignment assignment1 = parseAssignmentRoot();
@@ -617,7 +616,7 @@ public class Parser {
 
 
     }
-    public static WhileStatement parseWhileStatement() throws ParserException,IOException{
+    public static WhileStatement parseWhileStatement() throws IOException{
         matchValue("while");
         matchValue("(");
         Expression expression = parseExpression();
@@ -654,7 +653,7 @@ public class Parser {
                 return new Assignment(new ArrayElementAccess(identifier.value, expressionArray),new StructFieldAccess(identifier.value, attribute.value),expression);
             }
         }
-        throw new ParserException("No match " + lookahead.value);
+        throw new RuntimeException("No match " + lookahead.value);
 
     }
 
