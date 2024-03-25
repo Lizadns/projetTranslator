@@ -1,11 +1,12 @@
 package compiler.Parser;
 
-public class UnaryExpression {
-    UnaryOperator unaryOperator;
-    Expression expression;
+import java.util.ArrayList;
+
+public class UnaryExpression extends Node{
 
     public UnaryExpression(UnaryOperator u, Expression e){
-        this.unaryOperator= u;
-        this.expression=e;
+        super("UnaryExpression", new ArrayList<>());
+        this.children.add(u);
+        this.children.add(e);
     }
 }

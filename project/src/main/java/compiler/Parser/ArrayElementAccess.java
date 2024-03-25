@@ -1,11 +1,12 @@
 package compiler.Parser;
 
-public class ArrayElementAccess {
-    String arrayName;
-    Expression expression;
+import java.util.ArrayList;
+
+public class ArrayElementAccess extends Node{
 
     public ArrayElementAccess(String arrayName, Expression expression) {
-        this.arrayName= arrayName;
-        this.expression=expression;
+        super("ArrayElementAccess",new ArrayList<>());
+        this.children.add(new Leaf(arrayName));
+        this.children.add(expression);
     }
 }

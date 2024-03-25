@@ -1,9 +1,10 @@
 package compiler.Parser;
 
-public class Argument {
-    Expression expression;
+import java.util.ArrayList;
 
+public class Argument extends Node{
     public Argument(Expression expression){
-        this.expression=expression;
+        super("Argument", new ArrayList<>());
+        this.children.add(expression);
     }
 }

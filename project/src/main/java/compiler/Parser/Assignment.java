@@ -1,27 +1,20 @@
 package compiler.Parser;
 
-public class Assignment {
-    StructFieldAccess structFieldAccess;
-    ArrayElementAccess arrayElementAccess;
-    Variable variable;
-    Expression expression;
+import java.util.ArrayList;
 
-    public Assignment(StructFieldAccess structFieldAccess,Expression expression){
-        this.structFieldAccess=structFieldAccess;
-        this.expression=expression;
-    }
-    public Assignment(ArrayElementAccess arrayElementAccess,Expression expression){
-        this.arrayElementAccess=arrayElementAccess;
-        this.expression=expression;
+public class Assignment extends Node{
+
+    public Assignment(Node node,Expression expression){
+        super("Assignement",new ArrayList<>());
+        this.children.add(node);
+        this.children.add(expression);
     }
 
-    public Assignment(ArrayElementAccess arrayElementAccess,StructFieldAccess structFieldAccess,Expression expression){
-        this.arrayElementAccess=arrayElementAccess;
-        this.structFieldAccess=structFieldAccess;
-        this.expression=expression;
+    public Assignment(Node node,Node node2, Expression expression){
+        super("Assignement",new ArrayList<>());
+        this.children.add(node);
+        this.children.add(node2);
+        this.children.add(expression);
     }
-    public Assignment(Variable variable,Expression expression){
-        this.variable=variable;
-        this.expression=expression;
-    }
+
 }

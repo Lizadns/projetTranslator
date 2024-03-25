@@ -5,17 +5,14 @@ import jdk.nashorn.internal.runtime.ParserException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-public class Method {
-    Type returnType;
-    String nameMethod;
-    ArrayList<Param> params;
-    ArrayList<BlockInstruction> body;
+public class Method extends Node{
 
     public Method( String nameMethod,Type returnType, ArrayList<Param> params, ArrayList<BlockInstruction> body){
-        this.returnType=returnType;
-        this.nameMethod=nameMethod;
-        this.params=params;
-        this.body=body;
+        super("Method",new ArrayList<>());
+        this.children.add(new Leaf(nameMethod));
+        this.children.add(returnType);
+        this.children.addAll(params);
+        this.children.addAll(body);
     }
 
 

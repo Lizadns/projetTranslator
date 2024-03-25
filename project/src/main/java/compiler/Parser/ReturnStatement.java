@@ -1,9 +1,11 @@
 package compiler.Parser;
 
-public class ReturnStatement {
-    Expression returnExpression;
+import java.util.ArrayList;
+
+public class ReturnStatement extends Node {
 
     public ReturnStatement(Expression expression){
-        this.returnExpression=expression;
+        super("return",new ArrayList<>());
+        this.children.add(expression);
     }
 }

@@ -4,17 +4,16 @@ import compiler.Lexer.Symbol;
 import jdk.nashorn.internal.runtime.ParserException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import static compiler.Parser.Parser.match2;
 import static compiler.Parser.Parser.match;
 
-public class Type {
-    String type;
-    String value;
+public class Type extends Node{
 
-    public Type(String type,String value){
-        this.type=type;
-        this.value=value;
+    public Type(String value){
+        super("Type",new ArrayList<>());
+        this.children.add(new Leaf(value));
     }
 
 }

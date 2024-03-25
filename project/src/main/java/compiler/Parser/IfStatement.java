@@ -2,17 +2,13 @@ package compiler.Parser;
 
 import java.util.ArrayList;
 
-public class IfStatement {
-
-    String type;
-    Expression expression;
-
-    ArrayList<BlockInstruction> body;
+public class IfStatement extends Node{
 
     public IfStatement(String type, Expression expression, ArrayList<BlockInstruction> body){
-        this.body=body;
-        this.type=type;
-        this.expression=expression;
+        super("IfStatement",new ArrayList<>());
+        this.children.add(new Leaf(type));
+        this.children.add(expression);
+        this.children.addAll(body);
     }
 
 }

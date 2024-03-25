@@ -2,13 +2,11 @@ package compiler.Parser;
 
 import java.util.ArrayList;
 
-public class WhileStatement {
-    Expression expression;
-
-    ArrayList<BlockInstruction> body;
+public class WhileStatement extends Node{
 
     public WhileStatement(Expression expression, ArrayList<BlockInstruction> body){
-        this.expression=expression;
-        this.body=body;
+        super("WhileStatement", new ArrayList<>());
+        this.children.add(expression);
+        this.children.addAll(body);
     }
 }
