@@ -4,15 +4,31 @@ import java.io.PushbackReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class Lexer {
 
     private Reader reader;
-    private PushbackReader pushbackReader;
+    private static PushbackReader pushbackReader;
+    private static final int PUSHBACK_BUFFER_SIZE = 100; // Taille personnalisée du tampon de rembobinage
 
     public Lexer(Reader input) {
-        this.reader=input;
-        this.pushbackReader=new PushbackReader(this.reader);
+        this.reader = input;
+        this.pushbackReader = new PushbackReader(this.reader, PUSHBACK_BUFFER_SIZE);
+    }
+
+    public static void addAtBeginning(String textToAdd) throws IOException {
+        char[] charsToAdd = textToAdd.toCharArray();
+        for (int i = charsToAdd.length - 1; i >= 0; i--) {
+            pushbackReader.unread(charsToAdd[i]);
+        }
+    }
+
+    public static void addSymbolAtBeginning(Symbol symbol) throws IOException {
+        // Convertir le symbole en une chaîne de caractères
+        String symbolString = symbol.toString(); // Suppose que vous avez une méthode toString() appropriée dans la classe Symbol
+        // Insérer la chaîne de caractères au début du flux d'entrée
+        addAtBeginning(symbol.type);
     }
 
     public Symbol getNextSymbol() throws IOException {
@@ -202,7 +218,7 @@ public class Lexer {
             }
             else{
                 pushbackReader.unread(c);
-                return new Symbol("AssignmentOperator");
+                return new Symbol("AssignmentOperator","=");
             }
         }
 

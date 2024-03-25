@@ -1,6 +1,6 @@
 package compiler.Parser;
 
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
+
 import compiler.Lexer.Lexer;
 import compiler.Lexer.Symbol;
 import jdk.nashorn.internal.runtime.ParserException;
@@ -25,7 +25,7 @@ public class Parser {
 
     public static Symbol match(String type) throws ParserException, IOException {
         if(!lookahead.type.equals(type)) {
-            throw new ParserException("No match");
+            throw new ParserException("No match " + lookahead.value);
         } else {
             Symbol matchingSymbol = lookahead;
             lookahead = lexer.getNextSymbol();
@@ -35,7 +35,7 @@ public class Parser {
 
     public static Symbol matchValue(String value) throws ParserException, IOException {
         if(!lookahead.value.equals(value)) {
-            throw new ParserException("No match");
+            throw new ParserException("No match " + lookahead.value);
         } else {
             Symbol matchingSymbol = lookahead;
             lookahead = lexer.getNextSymbol();
@@ -45,7 +45,7 @@ public class Parser {
 
     public static Symbol match2(String type1, String type2) throws ParserException, IOException {
         if(!lookahead.type.equals(type1) && !lookahead.type.equals(type2)) {
-            throw new ParserException("No match");
+            throw new ParserException("No match " + lookahead.value + " or " + lookahead.type);
         } else {
             Symbol matchingSymbol = lookahead;
             lookahead = lexer.getNextSymbol();
@@ -55,7 +55,7 @@ public class Parser {
 
     public static Symbol match4(String type1, String type2,String type3,String type4) throws ParserException, IOException {
         if(!lookahead.type.equals(type1) && !lookahead.type.equals(type2)&& !lookahead.type.equals(type3)&& !lookahead.type.equals(type4)) {
-            throw new ParserException("No match");
+            throw new ParserException("No match " + lookahead.value);
         } else {
             Symbol matchingSymbol = lookahead;
             lookahead = lexer.getNextSymbol();
@@ -71,8 +71,8 @@ public class Parser {
 
     public static ArrayList<Declaration> parseDeclaration() throws ParserException, IOException{
         ArrayList<Declaration> declarations = new ArrayList<>();
-        while (lookahead.value.equals("struct") || lookahead.value.equals("final") || lookahead.type.equals("BaseType") || lookahead.type.equals("Identifier")){
-            if (lookahead.type.equals("final")) {
+        while (lookahead!=null && ( lookahead.value.equals("struct") || lookahead.value.equals("final") || lookahead.type.equals("BaseType") || lookahead.type.equals("Identifier"))){
+            if (lookahead.value.equals("final")) {
                 declarations.add(parseConstantDeclaration());
             } else if (lookahead.type.equals("struct")) {
                 declarations.add(parseStructDeclaration());
@@ -82,15 +82,21 @@ public class Parser {
                 if(lookahead.type.equals("[")){
                     match("OpeningHook");
                     if(!lookahead.type.equals("]")){ //si a[3] par ex.
+                        Lexer.addSymbolAtBeginning(lookahead);
                         lookahead=ancien;
                         break;
                     }
                     else{
+                        Lexer.addAtBeginning(lookahead.value);
                         lookahead=ancien;
                     }
                 }
+                Lexer.addAtBeginning(lookahead.value);
+                lookahead=ancien;
+
                 Type type = parseType2();
                 if (lookahead.type.equals("AssignmentOperator")){ //si direct "a =1;"
+                    Lexer.addAtBeginning(lookahead.value);
                     lookahead= ancien;
                     break;
                 }
@@ -99,6 +105,7 @@ public class Parser {
                     if (lookahead.type.equals("AssignmentOperator")) {
                         declarations.add(parseGlobalVariableDeclaration(type, identifier));
                     } else { // si c'est "int a;" par ex.
+                        Lexer.addAtBeginning(lookahead.value);
                         lookahead = ancien;
                         break;
                     }
@@ -303,7 +310,7 @@ public class Parser {
                 }
             }
             else{
-                throw new ParserException("No match");
+                throw new ParserException("No match "+ lookahead.type + " " + lookahead.value);
             }
         } return statements;
     }
@@ -490,7 +497,7 @@ public class Parser {
                 }
             }
             else{
-                throw new ParserException("No match");
+                throw new ParserException("No match " + lookahead.value);
             }
         }
         match("ClosingHook");
@@ -605,7 +612,7 @@ public class Parser {
                 new Assignment(new ArrayElementAccess(identifier.value, expressionArray),new StructFieldAccess(identifier.value, attribute.value),expression);
             }
         }
-        throw new ParserException("No match");
+        throw new ParserException("No match " + lookahead.value);
 
     }
 
