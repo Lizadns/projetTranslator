@@ -6,6 +6,7 @@ package compiler;
 import compiler.Lexer.Lexer;
 import compiler.Lexer.Symbol;
 import compiler.Parser.Parser;
+import compiler.Parser.PrintAST;
 import compiler.Parser.Program;
 
 import java.io.FileReader;
@@ -66,6 +67,10 @@ public class Compiler {
         }
 
         Program node = parser.parse();
+        if(printParser){
+            PrintAST p= new PrintAST(node);
+            p.print();
+        }
     }
     }
 
