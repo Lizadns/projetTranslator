@@ -348,12 +348,12 @@ public class Parser {
     }
     static Type parseType() throws ParserException, IOException {
         Symbol type = match2("Identifier","BaseType");    //mais aussi basetype, est ce que faire 1 autref fonction match avec 2 arguments?
-        return new Type(type.type,type.value);
+        return new Type(type.value);
     }
 
     static Type parseBaseType() throws ParserException, IOException {
         Symbol type = match("BaseType");
-        return new Type(type.type,type.value);
+        return new Type(type.value);
     }
 
     static Type parseType2() throws ParserException, IOException {
@@ -362,9 +362,9 @@ public class Parser {
             Symbol open = match("OpeningHook");
             Symbol close = match("ClosingHook");
             String s = type.value + open.value + close.value;
-            return new Type("Array",s);
+            return new Type(s);
         }
-        return new Type(type.type,type.value);
+        return new Type(type.value);
     }
 
     static Param parseParam() throws ParserException, IOException {
