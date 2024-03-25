@@ -1,6 +1,5 @@
 package compiler.Parser;
 import compiler.Lexer.Symbol;
-import jdk.nashorn.internal.runtime.ParserException;
 import java.io.IOException;
 import java.util.ArrayList;
 
