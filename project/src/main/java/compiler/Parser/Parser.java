@@ -261,7 +261,7 @@ public class Parser {
                                 statements.add(new Statement(variableDeclaration));
                             }
                         }
-                    }else if(!lookahead.value.equals("]")){//Identifier [3
+                    }else{//Identifier [3
                         Expression expression = parseExpression();
                         matchValue("]");//Identifier[expression]
                         if(lookahead.value.equals(".")){//Identifier[3].
