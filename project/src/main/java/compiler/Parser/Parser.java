@@ -240,6 +240,9 @@ public class Parser {
             if(lookahead.value.equals("def")){
                 Method method = parseMethod();
                 statements.add(method);
+            }else if(lookahead.value.equals("free")){
+                Free freeStatement = parseFreeStatement();
+                statements.add(freeStatement);
             }
             else if (lookahead.type.equals("KeywordCondition")){
                 IfStatement ifStatement = parseIfStatement();
@@ -254,7 +257,7 @@ public class Parser {
             }
             else if (lookahead.type.equals("Identifier")){
                 Symbol name = match("Identifier");
-                if(lookahead.type.equals("OpenParenthesis")){// Identifier(
+                if(lookahead.type.equals("OpeningParenthesis")){// Identifier(
                     FunctionCall functionCall = parseFunctionCall(name.value);
                     statements.add(functionCall);
                 }else if (lookahead.type.equals("AssignmentOperator")||lookahead.value.equals(".")){
@@ -324,8 +327,8 @@ public class Parser {
                     }
 
                 }else if(lookahead.value.equals("[")){
-                    match("[");
-                    match("]");
+                    matchValue("[");
+                    matchValue("]");
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.value.equals(";")){//BaseType[] Identifier ;
                         VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,true);
@@ -542,6 +545,18 @@ public class Parser {
         Expression expression = parseExpression();
         matchValue(";");
         return new ReturnStatement(expression);
+    }
+
+    public static Free parseFreeStatement() throws IOException{
+        matchValue("free");
+        Symbol name = match("Identifier");
+        if(lookahead.value.equals("[")){
+            matchValue("[");
+            matchValue("]");
+            name.value = name.value + "[]";
+        }
+        matchValue(";");
+        return new Free(new Variable(name.value));
     }
 
 
