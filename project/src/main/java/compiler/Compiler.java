@@ -66,7 +66,7 @@ public class Compiler {
             System.out.println("Fin du Lexer");
         }
 
-        Program node = parser.parse();
+        Program node = parser.getAST();
         if(printParser){
             PrintAST p= new PrintAST(node);
             p.print();
