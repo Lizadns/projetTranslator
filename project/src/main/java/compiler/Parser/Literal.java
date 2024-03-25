@@ -1,9 +1,10 @@
 package compiler.Parser;
 
 public class Literal {
-    String bool;
-    String Float;
-    String integer;
-    String string;
+    String value;
+
+    public Literal(String value){
+        this.value = value;
+    }
 
 }
