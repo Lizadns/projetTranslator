@@ -14,6 +14,8 @@ public class Statement {
     VariableDeclaration variableDeclaration;
     GlobalDeclaration globaldeclaration;
 
+    Declaration declaration;
+
     public Statement(Assignment assignment){
 
         this.assignment=assignment;
@@ -38,6 +40,9 @@ public class Statement {
     }
     public Statement(GlobalDeclaration globaldeclaration){
         this.globaldeclaration=globaldeclaration;
+    }
+    public Statement(Declaration declaration){
+        this.declaration=declaration;
     }
 
 

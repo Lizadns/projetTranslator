@@ -5,6 +5,8 @@ public class Declaration {
     StructDeclaration s;
     GlobalDeclaration g;
 
+    VariableDeclaration v;
+
     public Declaration(ConstantDeclaration c){
         this.c = c;
     }
@@ -13,5 +15,8 @@ public class Declaration {
     }
     public Declaration(GlobalDeclaration g){
         this.g = g;
+    }
+    public Declaration(VariableDeclaration v){
+        this.v = v;
     }
 }

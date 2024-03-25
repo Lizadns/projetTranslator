@@ -18,6 +18,8 @@ public class BlockInstruction {
     ReturnStatement returnStatement;
     GlobalDeclaration globaldeclaration;
 
+    Declaration declaration;
+
     public BlockInstruction(Assignment assignment){
 
         this.assignment=assignment;
@@ -42,5 +44,8 @@ public class BlockInstruction {
     }
     public BlockInstruction(GlobalDeclaration globaldeclaration){
         this.globaldeclaration=globaldeclaration;
+    }
+    public BlockInstruction(Declaration declaration){
+        this.declaration=declaration;
     }
 }
