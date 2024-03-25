@@ -1,13 +1,15 @@
 package compiler.Parser;
 
 
-public class BinaryExpression {
-    Expression expression1;
-    BinaryOperator binaryOperator;
-    Expression expression2;
+import java.util.ArrayList;
+
+public class BinaryExpression extends Node{
+
     public BinaryExpression(Expression e1, BinaryOperator b, Expression e2){
-        this.expression1= e1;
-        this.binaryOperator=b;
-        this.expression2=e2;
+        super("BinaryExpression", new ArrayList<>());
+        this.children.add(e1);
+        this.children.add(b);
+        this.children.add(e2);
+
     }
 }

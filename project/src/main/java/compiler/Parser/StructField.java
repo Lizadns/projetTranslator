@@ -1,11 +1,12 @@
 package compiler.Parser;
 
-public class StructField {
-    Type type;
-    String identifier;
+import java.util.ArrayList;
+
+public class StructField extends Node{
 
     public StructField(Type t, String i){
-        this.type = t;
-        this.identifier=i;
+        super("StructField", new ArrayList<>());
+        this.children.add(t);
+        this.children.add(new Leaf(i));
     }
 }

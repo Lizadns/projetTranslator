@@ -2,12 +2,10 @@ package compiler.Parser;
 
 import java.util.ArrayList;
 
-public class FunctionCall {
-    String name;
-    ArrayList<Argument> arguments;
-
+public class FunctionCall extends Node{
     public FunctionCall(String name,ArrayList<Argument> arguments){
-        this.name=name;
-        this.arguments=arguments;
+        super("FunctionCall", new ArrayList<>());
+        this.children.add(new Leaf(name));
+        this.children.addAll(arguments);
     }
 }

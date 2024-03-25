@@ -6,13 +6,14 @@ import java.util.ArrayList;
 
 import static compiler.Parser.Parser.match;
 
-public class Param {
+public class Param extends Node{
     Type type;
     String name;
 
     public Param(Type type, String name){
-        this.type=type;
-        this.name=name;
+        super("Param",new ArrayList<>());
+        this.children.add(type);
+        this.children.add(new Leaf(name));
     }
 
 

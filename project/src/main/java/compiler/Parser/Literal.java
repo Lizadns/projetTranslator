@@ -1,10 +1,12 @@
 package compiler.Parser;
 
-public class Literal {
-    String value;
+import java.util.ArrayList;
+
+public class Literal extends Node{
 
     public Literal(String value){
-        this.value = value;
+        super("Literal",new ArrayList<>());
+        this.children.add(new Leaf(value));
     }
 
 }

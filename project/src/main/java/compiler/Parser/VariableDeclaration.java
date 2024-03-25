@@ -1,12 +1,13 @@
 package compiler.Parser;
 
-public class VariableDeclaration {
-    Type type;
-    Variable nameVariable;
+import java.util.ArrayList;
+
+public class VariableDeclaration extends Node{
 
     public VariableDeclaration(Type type, Variable nameVariable){
-        this.type=type;
-        this.nameVariable=nameVariable;
+        super("VariableDeclaration",new ArrayList<>());
+        this.children.add(type);
+        this.children.add(nameVariable);
     }
 
 }

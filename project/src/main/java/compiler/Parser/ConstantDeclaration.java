@@ -1,13 +1,13 @@
 package compiler.Parser;
 
-public class ConstantDeclaration {
-    Type type;
-    String identifier;
-    Expression expression;
+import java.util.ArrayList;
+
+public class ConstantDeclaration extends Node{
 
     public ConstantDeclaration (Type t, String i, Expression e){
-        this.type = t;
-        this.identifier = i;
-        this.expression = e;
+        super("ConstantDeclaration", new ArrayList<>());
+        this.children.add(t);
+        this.children.add(new Leaf(i));
+        this.children.add(e);
     }
 }

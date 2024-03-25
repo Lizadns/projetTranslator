@@ -1,9 +1,11 @@
 package compiler.Parser;
 
-public class Variable {
-    String name;
+import java.util.ArrayList;
+
+public class Variable extends Node{
 
     public Variable(String name){
-        this.name=name;
+        super("Variable",new ArrayList<>());
+        this.children.add(new Leaf(name));
     }
 }
