@@ -74,7 +74,7 @@ public class Parser {
         while (lookahead!=null && ( lookahead.value.equals("struct") || lookahead.value.equals("final") || lookahead.type.equals("BaseType") || lookahead.type.equals("Identifier"))){
             if (lookahead.value.equals("final")) {
                 declarations.add(parseConstantDeclaration());
-            } else if (lookahead.type.equals("struct")) {
+            } else if (lookahead.value.equals("struct")) {
                 declarations.add(parseStructDeclaration());
             } else {
                 Symbol ancien = lookahead;
@@ -82,7 +82,7 @@ public class Parser {
                 if(lookahead.type.equals("[")){
                     match("OpeningHook");
                     if(!lookahead.type.equals("]")){ //si a[3] par ex.
-                        Lexer.addSymbolAtBeginning(lookahead);
+                        Lexer.addAtBeginning(lookahead.value);
                         lookahead=ancien;
                         break;
                     }
@@ -172,13 +172,29 @@ public class Parser {
                 FunctionCall functionCall = parseFunctionCall(identifier.value);
                 return new Expression(functionCall);
             }
+            else if (lookahead.value.equals("[")){
+                Symbol open = matchValue("[");
+                Expression e= parseExpression();
+                Symbol close= matchValue("]");
+                if(lookahead.value.equals(".")){
+                    matchValue(".");
+                    Symbol identifier2 = match("Identifier");
+                    return new Expression(new ArrayAndStructAccess(identifier.value,e, identifier2.value));
+                }
+                return new Expression(new ArrayElementAccess(identifier.value,e));
+            }
+            else if(lookahead.value.equals(".")){
+                matchValue(".");
+                Symbol identifier2 = match("Identifier");
+                new StructFieldAccess(identifier.value, identifier2.value);
+            }
             Variable v = new Variable(identifier.value);
             return new Expression(v);
-        } else if (lookahead.type.equals("OpeningParenthesis")) {
+        } else if (lookahead.value.equals("(")) {
             // If the expression starts with a parenthesis, parse the nested expression
-            match("OpeningParenthesis");
+            matchValue("(");
             Expression nestedExpression = parseExpression();
-            match("ClosingParenthesis");
+            matchValue(")");
             return nestedExpression;
         }else if (lookahead.type.equals("Number")){
             Symbol number =match("Number");
@@ -200,6 +216,12 @@ public class Parser {
             match("!");
             Expression e = parseExpression();
             return new Expression(new UnaryExpression(u,e));
+        }else if (lookahead.type.equals("BaseType")){
+            Symbol type = match("BaseType");
+            Symbol open = matchValue("[");
+            Expression e= parseExpression();
+            Symbol close= matchValue("]");
+            return new Expression(new NewArray(new Type(type.value),e));
         }
         else{ //UnaryExpression -
             UnaryOperator u= new UnaryOperator(lookahead.value);
@@ -212,7 +234,7 @@ public class Parser {
     public static ArrayList<Statement> parseStatement() throws ParserException, IOException {
         ArrayList<Statement> statements = new ArrayList<>();
         while(lookahead!=null){
-            if(lookahead.type.equals("KeywordMethod")){
+            if(lookahead.value.equals("def")){
                 Method method = parseMethod();
                 statements.add(new Statement(method));
             }
@@ -359,8 +381,8 @@ public class Parser {
     static Type parseType2() throws ParserException, IOException {
         Symbol type = match2("Identifier","BaseType");
         if (lookahead.value.equals("[")){
-            Symbol open = match("OpeningHook");
-            Symbol close = match("ClosingHook");
+            Symbol open = matchValue("[");
+            Symbol close = matchValue("]");
             String s = type.value + open.value + close.value;
             return new Type(s);
         }
@@ -368,7 +390,7 @@ public class Parser {
     }
 
     static Param parseParam() throws ParserException, IOException {
-        Type type = parseType();
+        Type type = parseType2();
         Symbol identifier = match("Identifier");
         return new Param(type,identifier.value);
     }
@@ -377,47 +399,47 @@ public class Parser {
         ArrayList<Param> parameters = new ArrayList<>();
         if(!lookahead.value.equals(")")) {
             parameters.add(parseParam());
-            while(lookahead.type.equals("Comma")) {
-                match("Comma");
+            while(lookahead.value.equals(",")) {
+                matchValue(",");
                 parameters.add(parseParam());
             }
         }
         return parameters;
     }
     public static Method parseMethod() throws ParserException, IOException {
-        match("KeywordMethod");                 // method commence par def
+        matchValue("def");                 // method commence par def
         Type returnType = parseType();              // ensuite le returnType
         String name = (String)match("Identifier").value; //ensuite le nom de la methode
-        match("OpenParenthesis");               //debut des parametres
+        matchValue("(");               //debut des parametres
         ArrayList<Param> params = parseParams();
-        match("CloseParenthesis");              //fin des paramètres
+        matchValue(")");              //fin des paramètres
         ArrayList<BlockInstruction> body = parseBlock();
         return new Method(name, returnType, params, body);
     }
 
     public static ArrayList<BlockInstruction>  parseBlock() throws IOException {
         ArrayList<BlockInstruction> blockInstructions = new ArrayList<>();
-        match("OpeningHook");
-        while(!lookahead.type.equals("ClosingHook") && !lookahead.equals(null)) {
-            if (lookahead.type.equals("KeywordCondition")){
+        matchValue("{");
+        while(!lookahead.value.equals("}") && !lookahead.equals(null)) {
+            if (lookahead.value.equals("if")||lookahead.value.equals("else")){
                 IfStatement ifStatement = parseIfStatement();
                 blockInstructions.add(new BlockInstruction(ifStatement));
-            }else if (lookahead.type.equals("KeywordWhile")){
+            }else if (lookahead.value.equals("while")){
                 WhileStatement whileStatement = parseWhileStatement();
                 blockInstructions.add(new BlockInstruction(whileStatement));
             }
-            else if (lookahead.type.equals("KeywordFor")){
+            else if (lookahead.value.equals("for")){
                 ForStatement forStatement = parseForStatement();
                 blockInstructions.add(new BlockInstruction(forStatement));
             }else if(lookahead.value.equals("return")){
-                matchValue("return");
                 ReturnStatement returnStatement = parseReturnStatement();
                 blockInstructions.add(new BlockInstruction(returnStatement));
             }
             else if (lookahead.type.equals("Identifier")){
                 Type identifierName = parseType();
-                if(lookahead.type.equals("OpenParenthesis")){// Identifier(
+                if(lookahead.value.equals("(")){// Identifier(
                     FunctionCall functionCall = parseFunctionCall(identifierName.value);
+                    matchValue(";");
                     blockInstructions.add(new BlockInstruction(functionCall));
                 }else if (lookahead.type.equals("AssignmentOperator")||lookahead.value.equals(".")){
                     //si . dire que c'est un tableau dans parseAssignement
@@ -500,7 +522,7 @@ public class Parser {
                 throw new ParserException("No match " + lookahead.value);
             }
         }
-        match("ClosingHook");
+        matchValue("}");
         return blockInstructions;
     }
 
@@ -517,19 +539,21 @@ public class Parser {
 
 
     public static FunctionCall parseFunctionCall(String nameCall) throws ParserException,IOException {
-        match("OpenParenthesis");
+        matchValue("(");
         ArrayList<Argument> arguments = parseArguments();
-        match("ClosingParenthesis");
+        matchValue(")");
         return new FunctionCall(nameCall,arguments);
 
     }
     public static ArrayList<Argument> parseArguments() throws ParserException,IOException {
         ArrayList<Argument> arguments = new ArrayList<>();
-        while(!lookahead.type.equals("ClosingParenthesis") && lookahead!=null){
+        while(!lookahead.value.equals(")") && lookahead!=null){
             Expression expression = parseExpression();
+            if(lookahead.value.equals(",")){
+                matchValue(",");
+            }
             arguments.add(new Argument(expression));
         }
-        match("ClosingParenthesis");
         return arguments;
     }
 
@@ -572,10 +596,10 @@ public class Parser {
 
     }
     public static WhileStatement parseWhileStatement() throws ParserException,IOException{
-        match("KeywordWhile");
-        match("OpenParenthesis");
+        matchValue("while");
+        matchValue("(");
         Expression expression = parseExpression();
-        match("ClosingParenthesis");
+        matchValue(")");
         ArrayList<BlockInstruction> body = parseBlock();
         return new WhileStatement(expression,body);
     }
@@ -585,15 +609,13 @@ public class Parser {
         if(lookahead.type.equals("AssignmentOperator")){ // a = 3;
             match("AssignmentOperator");
             Expression expression = parseExpression();
-            matchValue(";");
-            new Assignment(new Variable(identifier.value),expression);
+            return new Assignment(new Variable(identifier.value),expression);
         } else if(lookahead.value.equals(".")){
             matchValue(".");
             Symbol identifierStruct = match("Identifier");
             match("AssignmentOperator");
             Expression expression = parseExpression();
-            matchValue(";");
-            new Assignment(new StructFieldAccess(identifier.value,identifierStruct.value),expression);
+            return new Assignment(new StructFieldAccess(identifier.value,identifierStruct.value),expression);
         }
         else if(lookahead.value.equals("[")){
             Expression expressionArray = parseExpression();
@@ -601,15 +623,13 @@ public class Parser {
             if(lookahead.type.equals("AssignmentOperator")){
                 match("AssignmentOperator");
                 Expression expression = parseExpression();
-                matchValue(";");
-                new Assignment(new ArrayElementAccess(identifier.value,expressionArray),expression);
+                return new Assignment(new ArrayElementAccess(identifier.value,expressionArray),expression);
             }else if(lookahead.value.equals(".")){
                 matchValue(".");
                 Symbol attribute = match("Identifier");
                 match("AssignmentOperator");
                 Expression expression = parseExpression();
-                matchValue(";");
-                new Assignment(new ArrayElementAccess(identifier.value, expressionArray),new StructFieldAccess(identifier.value, attribute.value),expression);
+                return new Assignment(new ArrayElementAccess(identifier.value, expressionArray),new StructFieldAccess(identifier.value, attribute.value),expression);
             }
         }
         throw new ParserException("No match " + lookahead.value);

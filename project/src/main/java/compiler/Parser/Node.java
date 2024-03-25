@@ -10,4 +10,9 @@ public class Node {
         this.value = v;
         this.children= c;
     }
+
+    @Override
+    public String toString() {
+        return value;
+    }
 }
