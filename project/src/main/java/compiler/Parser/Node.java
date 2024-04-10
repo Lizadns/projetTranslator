@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 public class Node {
 
-    String value;
-    ArrayList<Node> children;
+    public String value;
+    public ArrayList<Node> children;
     public Node(String v, ArrayList<Node> c){
         this.value = v;
         this.children= c;
@@ -15,4 +15,5 @@ public class Node {
     public String toString() {
         return value;
     }
+
 }
