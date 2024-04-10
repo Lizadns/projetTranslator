@@ -45,10 +45,16 @@ public class SemanticAnalysis {
         for(Node nodeChildren : ifNodes){
             if(nodeChildren instanceof Expression){
                 //verifier que c un truc boolean
+                checkBooleanCondition(nodeChildren);
             }else if(nodeChildren instanceof BlockInstruction){
 
             }
         }
+    }
+    void checkBooleanCondition(Node booleanExpression){
+        ArrayList<Node> expressionChildren = booleanExpression.children;
+        //regarder si il y a == ,<,>,!=, true, false, =<,=>
+        //function call qui retourne un boolean
     }
 
 
