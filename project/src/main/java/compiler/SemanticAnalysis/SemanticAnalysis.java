@@ -48,10 +48,13 @@ public class SemanticAnalysis {
         ArrayList<Node> StatementNodes = statement.children;
         for(Node nodeChildren : StatementNodes){
             if(nodeChildren instanceof IfStatement){
-                checkTypesConditionStatement(nodeChildren);
+                checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
             }else if(nodeChildren instanceof WhileStatement){
-                checkTypesConditionStatement(nodeChildren);
-            }else if(nodeChildren instanceof GlobalDeclaration){
+                checkTypesConditionStatement((Expression) nodeChildren.children.get(0));
+            }else if(nodeChildren instanceof ForStatement){
+                checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
+            }
+            else if(nodeChildren instanceof GlobalDeclaration){
                 ArrayList<Node> globalNode = nodeChildren.children;
                 Type leftDeclaration = (Type) globalNode.get(0);
                 Expression rightDeclaration = (Expression) globalNode.get(2);
@@ -84,7 +87,7 @@ public class SemanticAnalysis {
 
             }else if(node instanceof Variable){
                 Node parent = getParent(root, node.children.get(0).value);
-                String typeDeclaration = parent.children.get(0).value;
+                String typeDeclaration = parent.children.get(0).children.get(0).value;
                 return typeDeclaration;
             }else if (node instanceof Expression){
                 //nestedExpression
@@ -156,6 +159,8 @@ public class SemanticAnalysis {
     }
 
     private void isTheSameTypeOperator(String leftOperator, String rightOperator) throws SemanticException {
+        System.out.println(leftOperator);
+        System.out.println(rightOperator);
         if(!leftOperator.equals(rightOperator)){
             throw new SemanticException("OperatorError");
         }
@@ -170,12 +175,16 @@ public class SemanticAnalysis {
 
     Node getParent(Node node, String variableName) throws SemanticException {
         if (node == null) {
-            throw new SemanticException("No declaration of the variable");
+            throw new SemanticException("No declaration of the variable 1");
         }
         if (node instanceof VariableDeclaration) {
             VariableDeclaration varDecl = (VariableDeclaration) node;
             if (varDecl.children.get(1).children.get(0).value.equals(variableName)) {
                 return node; // Si le nom de la VariableDeclaration correspond, nous avons trouvé le nœud parent recherché
+            }
+        }else if(node instanceof GlobalDeclaration){
+            if(node.children.get(1).value.equals(variableName)){
+                return node;
             }
         }
 
@@ -189,27 +198,22 @@ public class SemanticAnalysis {
             }
         }
         else{
-            throw new SemanticException("No declaration of the variable");
+            throw new SemanticException("No declaration of the variable 2");
         }
         return null;
     }
 
 
 
-    void checkTypesConditionStatement(Node ifStatement) throws SemanticException {
-        ArrayList<Node> ifNodes = ifStatement.children;
-        for(Node nodeChildren : ifNodes){
-            if(nodeChildren instanceof Expression){
-                //verifier que c un truc boolean
-                String type = getType((Expression) nodeChildren);
-                if(!type.equals("bool")){
-                    throw new SemanticException("MissingConditionError");
-                }
-            }else if(nodeChildren instanceof BlockInstruction){
-                
-            }
+    void checkTypesConditionStatement(Expression conditionStatement) throws SemanticException {
+        Boolean condition = isItACondition((Expression) conditionStatement);
+        if (!condition && !getType((Expression)conditionStatement).equals("bool")) {
+            throw new SemanticException("MissingConditionError");
         }
+
+
     }
+
     void checkBooleanCondition(Node booleanExpression){
         ArrayList<Node> expressionChildren = booleanExpression.children;
         //regarder si il y a == ,<,>,!=, true, false, =<,=>
