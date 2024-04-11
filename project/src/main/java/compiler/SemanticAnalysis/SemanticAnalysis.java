@@ -31,7 +31,8 @@ public class SemanticAnalysis {
 
     void checkTypesDeclaration(Node declaration) throws SemanticException {
         ArrayList<Node> listNode = declaration.children;
-        for(Node node : listNode){
+        for(int i =0; i< listNode.size();i++){
+            Node node = listNode.get(i);
             if(node instanceof ConstantDeclaration || node instanceof GlobalDeclaration){
                 ArrayList<Node> childrenDeclaration = node.children;
                 Type leftDeclaration = (Type) childrenDeclaration.get(0);
@@ -39,19 +40,25 @@ public class SemanticAnalysis {
                 String rightDclrt = getType(rightDeclaration);
                 isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
             }else if(node instanceof StructDeclaration){
-                String i = node.children.get(0).value;
-                if (i.equals("BaseType")){
+                String identifier = node.children.get(0).value;
+                if (identifier.equals("BaseType")){
                     throw new SemanticException("StructError");
                 }
-                else if (i.equals("Keyword")){
+                else if (identifier.equals("Keyword")){
                     throw new SemanticException("StructError");
-                }else if(i.equals("Boolean")){
+                }else if(identifier.equals("Boolean")){
                     throw new SemanticException("StructError");
                 }
-                else{
-
+                else{ // overwrite a previously defined structure
+                    for (int j =0; j<i; j++){
+                        Node node2=listNode.get(j);
+                        if(node2 instanceof StructDeclaration){
+                            if( identifier.equals(node2.children.get(0).value)){
+                                throw new SemanticException("StructError");
+                            }
+                        }
+                    }
                 }
-                //check si c'est pas le meme nom de structure qu'une autre précédemment créé
             }
         }
     }
