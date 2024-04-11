@@ -76,6 +76,7 @@ public class Parser {
             } else if (lookahead.value.equals("struct")) {
                 declarations.add(parseStructDeclaration());
             } else {
+
                 Symbol ancien = lookahead;
                 Symbol s = match2("Identifier","BaseType");
                 if(lookahead.value.equals("[")){
@@ -108,7 +109,9 @@ public class Parser {
                         declarations.add(parseGlobalVariableDeclaration(type, identifier));
                     } else { // si c'est "int a;" par ex.
                         Lexer.addAtBeginning(lookahead.value);
+                        Lexer.addAtBeginning(identifier.value);
                         lookahead = ancien;
+
                         break;
                     }
                 }
@@ -313,14 +316,17 @@ public class Parser {
                 }
 
             }else if( lookahead.type.equals("BaseType")){
+
                 Type type = parseType();
                 if(lookahead.type.equals("Identifier")){//BaseType Identifier
+
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.type.equals("AssignmentOperator")){//BaseType Identifier = -> GD
                         GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
                         statements.add(globalDeclaration);
                     }
                     else if (lookahead.value.equals(";")){//BaseType Identifier ; -> VD
+
                         VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,false);
                         statements.add(variableDeclaration);
                     }
@@ -508,6 +514,7 @@ public class Parser {
                         blockInstructions.add(new BlockInstruction(globalDeclaration));
                     }
                     else if (lookahead.value.equals(";")){//BaseType Identifier ; -> VD
+
                         VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,false);
                         blockInstructions.add(new BlockInstruction(variableDeclaration));
                     }

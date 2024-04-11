@@ -57,6 +57,15 @@ public class SemanticAnalysis {
                 Expression rightDeclaration = (Expression) globalNode.get(2);
                 String rightDclrt = getType(rightDeclaration);
                 isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
+            }else if(nodeChildren instanceof Assignment){
+                ArrayList<Node> assignmentChildren = nodeChildren.children;
+                if(assignmentChildren.get(0) instanceof Variable){ // a = expression
+                    Node variableDeclaration = getParent(root,assignmentChildren.get(0).children.get(0).value);
+                    String typeVariable = variableDeclaration.children.get(0).children.get(0).value;
+                    String typeExpression = getType((Expression) nodeChildren.children.get(1));
+                    isTheSameType(typeVariable,typeExpression);
+                }
+
             }
         }
     }
@@ -74,7 +83,7 @@ public class SemanticAnalysis {
             }else if(node instanceof StructFieldAccess){
 
             }else if(node instanceof Variable){
-                Node parent = getParent(node, node.value);
+                Node parent = getParent(root, node.children.get(0).value);
                 String typeDeclaration = parent.children.get(0).value;
                 return typeDeclaration;
             }else if (node instanceof Expression){
@@ -107,31 +116,36 @@ public class SemanticAnalysis {
     }
 
     void isTheSameType(String left, String right) throws SemanticException {
-        System.out.println(left);
-        System.out.println(right);
+        //System.out.println(left);
+        //System.out.println(right);
         if(!left.equals(right)){
             throw new SemanticException("TypeError");
         }
     }
 
-    Node getParent(Node node, String variableName){
+    Node getParent(Node node, String variableName) throws SemanticException {
         if (node == null) {
-            return null; // Si le nœud est nul, nous avons atteint la fin de l'arbre
+            throw new SemanticException("No declaration of the variable");
         }
         if (node instanceof VariableDeclaration) {
             VariableDeclaration varDecl = (VariableDeclaration) node;
-            if (varDecl.value.equals(variableName)) {
+            if (varDecl.children.get(1).children.get(0).value.equals(variableName)) {
                 return node; // Si le nom de la VariableDeclaration correspond, nous avons trouvé le nœud parent recherché
             }
         }
-        // Parcourir récursivement les enfants du nœud actuel
-        for (Node child : node.children) {
-            Node parent = getParent(child, variableName);
-            if (parent != null) {
-                return parent; // Si le nœud parent est trouvé dans les enfants, retournez-le
+
+        if (node.children != null) {
+            for (Node child : node.children) {
+                // Appel récursif avec child seulement si child n'est pas null
+                Node parent = getParent(child, variableName);
+                if (parent != null) {
+                    return parent; // Si le nœud parent est trouvé dans les enfants, retournez-le
+                }
             }
         }
-
+        else{
+            throw new SemanticException("No declaration of the variable");
+        }
         return null;
     }
 
