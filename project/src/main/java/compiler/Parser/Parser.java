@@ -131,11 +131,32 @@ public class Parser {
     }
     public static StructDeclaration parseStructDeclaration() throws IOException {
         matchValue("struct");
-        Symbol identifier = match("Identifier");
-        match("OpeningBrace");
-        ArrayList<StructField> structFields = parseStructFields();
-        match("ClosingBrace");
-        return new StructDeclaration(identifier.value, structFields);
+        Symbol identifier;
+        if (lookahead.type.equals("BaseType")) {
+            identifier = match("BaseType");
+            match("OpeningBrace");
+            ArrayList<StructField> structFields = parseStructFields();
+            match("ClosingBrace");
+            return new StructDeclaration(identifier.type, structFields);
+        }else if(lookahead.type.equals("Boolean")) {
+            identifier = match("Boolean");
+            match("OpeningBrace");
+            ArrayList<StructField> structFields = parseStructFields();
+            match("ClosingBrace");
+            return new StructDeclaration(identifier.type, structFields);
+        }else if(lookahead.type.equals("Keyword")){
+            identifier = match("Keyword");
+            match("OpeningBrace");
+            ArrayList<StructField> structFields = parseStructFields();
+            match("ClosingBrace");
+            return new StructDeclaration(identifier.type, structFields);
+        }else{
+            identifier = match("Identifier");
+            match("OpeningBrace");
+            ArrayList<StructField> structFields = parseStructFields();
+            match("ClosingBrace");
+            return new StructDeclaration(identifier.value, structFields);
+        }
     }
 
     public static ArrayList<StructField> parseStructFields() throws IOException{
@@ -246,14 +267,14 @@ public class Parser {
                 Free freeStatement = parseFreeStatement();
                 statements.add(freeStatement);
             }
-            else if (lookahead.type.equals("KeywordCondition")){
+            else if (lookahead.value.equals("if")||lookahead.value.equals("else")){
                 IfStatement ifStatement = parseIfStatement();
                 statements.add(ifStatement);
-            }else if (lookahead.type.equals("KeywordWhile")){
+            }else if (lookahead.value.equals("while")){
                 WhileStatement whileStatement = parseWhileStatement();
                 statements.add(whileStatement);
             }
-            else if (lookahead.type.equals("KeywordFor")){
+            else if (lookahead.value.equals("for")){
                 ForStatement forStatement = parseForStatement();
                 statements.add(forStatement);
             }

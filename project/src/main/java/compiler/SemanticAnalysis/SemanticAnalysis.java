@@ -39,7 +39,19 @@ public class SemanticAnalysis {
                 String rightDclrt = getType(rightDeclaration);
                 isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
             }else if(node instanceof StructDeclaration){
+                String i = node.children.get(0).value;
+                if (i.equals("BaseType")){
+                    throw new SemanticException("StructError");
+                }
+                else if (i.equals("Keyword")){
+                    throw new SemanticException("StructError");
+                }else if(i.equals("Boolean")){
+                    throw new SemanticException("StructError");
+                }
+                else{
 
+                }
+                //check si c'est pas le meme nom de structure qu'une autre précédemment créé
             }
         }
     }
