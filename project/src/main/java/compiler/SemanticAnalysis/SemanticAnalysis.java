@@ -103,21 +103,66 @@ public class SemanticAnalysis {
                 }
 
             }else if (node instanceof UnaryExpression){
+                // ne rien faire, ça ne change rien
+                return "UnaryExpression";
 
             }else if (node instanceof BinaryExpression){
                 //return, si les opérant sont du meme type,
                 // le type de binary expression "ArithmeticOperator","ComparisonOperator","AndOperator","OrOperator"
+                String binaryOperator = node.children.get(1).children.get(0).value;
+                String leftOperator = getType((Expression) node.children.get(0));
+                String rightOperator = getType((Expression) node.children.get(2));
+                isTheSameTypeOperator(leftOperator,rightOperator);
+                if(binaryOperator.equals("+") || binaryOperator.equals("-") || binaryOperator.equals("/") ||binaryOperator.equals("*")){
+                    if(rightOperator.equals("float")){
+                        return "float";
+                    }else if(rightOperator.equals("int")){
+                        return "int";
+                    }
+                    else{
+                        throw new SemanticException("TypeError in ArithmeticOperation");
+                    }
+                }else if(binaryOperator.equals("<")||binaryOperator.equals("<=")||binaryOperator.equals("==")||binaryOperator.equals("!=")||binaryOperator.equals(">")||binaryOperator.equals(">=")){
+                    return "bool";
+                }
+                else{
+                    //verifier que de chaque coté est le meme type et que l'operateur soit un comparaison operator
+                    Boolean leftCondition = isItACondition((Expression) node.children.get(0));
+                    Boolean rightCondition = isItACondition((Expression) node.children.get(2));
+                    if(leftCondition && rightCondition){
+                        return "bool";
+                    }
+                }
             }
             else{
                 throw new SemanticException("No Matching Type");
             }
         }
-        return "";
+        return " blabl ";
+    }
+
+    private Boolean isItACondition(Expression expression) throws SemanticException {
+        Node childrenNode = expression.children.get(0);
+        if(childrenNode instanceof BinaryExpression){
+            String operator = childrenNode.children.get(1).children.get(0).value;
+            String leftOperator = getType((Expression) childrenNode.children.get(0));
+            String rightOperator = getType((Expression) childrenNode.children.get(0));
+            isTheSameTypeOperator(leftOperator,rightOperator);
+            if(operator.equals("<")||operator.equals("<=")||operator.equals("==")||operator.equals("!=")||operator.equals(">")||operator.equals(">=")){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void isTheSameTypeOperator(String leftOperator, String rightOperator) throws SemanticException {
+        if(!leftOperator.equals(rightOperator)){
+            throw new SemanticException("OperatorError");
+        }
     }
 
     void isTheSameType(String left, String right) throws SemanticException {
-        //System.out.println(left);
-        //System.out.println(right);
+
         if(!left.equals(right)){
             throw new SemanticException("TypeError");
         }
