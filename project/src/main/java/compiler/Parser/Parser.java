@@ -97,6 +97,7 @@ public class Parser {
                     Lexer.addAtBeginning(lookahead.value);
                     lookahead = ancien;
                 }
+
                 Type type = parseType2();
                 if (lookahead.type.equals("AssignmentOperator")||lookahead.value.equals(".")){ //si direct "a =1;"
                     Lexer.addAtBeginning(lookahead.value);
@@ -191,7 +192,7 @@ public class Parser {
             else if(lookahead.value.equals(".")){
                 matchValue(".");
                 Symbol identifier2 = match("Identifier");
-                new StructFieldAccess(identifier.value, identifier2.value);
+                return new Expression(new StructFieldAccess(identifier.value, identifier2.value));
             }
             Variable v = new Variable(identifier.value);
             return new Expression(v);

@@ -37,7 +37,6 @@ public class SemanticAnalysis {
                 Type leftDeclaration = (Type) childrenDeclaration.get(0);
                 Expression rightDeclaration = (Expression) childrenDeclaration.get(2);
                 String rightDclrt = getType(rightDeclaration);
-                System.out.println(rightDclrt);
                 isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
             }else if(node instanceof StructDeclaration){
 
@@ -72,10 +71,7 @@ public class SemanticAnalysis {
                     String nameStruct = assignmentChildren.get(0).children.get(0).value;
                     String nameStructField = assignmentChildren.get(0).children.get(1).value;
                     String type = isTheStrucDefined(root, nameStruct, nameStructField);
-                    System.out.println("JE SUIS ICI");
                     String rightType = getType((Expression) assignmentChildren.get(1));
-                    System.out.println(type);
-                    System.out.println(rightType);
                     isTheSameType(type,rightType);
                 }
 
@@ -97,11 +93,9 @@ public class SemanticAnalysis {
                 String nameStruct = node.children.get(0).value;
                 String nameStructField = node.children.get(1).value;
                 String type = isTheStrucDefined(root, nameStruct, nameStructField);
-                System.out.println("JE SUIS ICI");
                 return type;
 
             }else if(node instanceof Variable){
-                System.out.println(node.children);
                 Node parent = getParent(root, node.children.get(0).value);
                 String typeDeclaration = parent.children.get(0).children.get(0).value;
                 return typeDeclaration;
