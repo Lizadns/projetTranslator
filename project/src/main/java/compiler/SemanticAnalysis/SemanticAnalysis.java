@@ -37,6 +37,7 @@ public class SemanticAnalysis {
                 Type leftDeclaration = (Type) childrenDeclaration.get(0);
                 Expression rightDeclaration = (Expression) childrenDeclaration.get(2);
                 String rightDclrt = getType(rightDeclaration);
+                System.out.println(rightDclrt);
                 isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
             }else if(node instanceof StructDeclaration){
 
@@ -67,6 +68,15 @@ public class SemanticAnalysis {
                     String typeVariable = variableDeclaration.children.get(0).children.get(0).value;
                     String typeExpression = getType((Expression) nodeChildren.children.get(1));
                     isTheSameType(typeVariable,typeExpression);
+                }else if (assignmentChildren.get(0) instanceof StructFieldAccess){
+                    String nameStruct = assignmentChildren.get(0).children.get(0).value;
+                    String nameStructField = assignmentChildren.get(0).children.get(1).value;
+                    String type = isTheStrucDefined(root, nameStruct, nameStructField);
+                    System.out.println("JE SUIS ICI");
+                    String rightType = getType((Expression) assignmentChildren.get(1));
+                    System.out.println(type);
+                    System.out.println(rightType);
+                    isTheSameType(type,rightType);
                 }
 
             }
@@ -84,8 +94,14 @@ public class SemanticAnalysis {
             }else if(node instanceof ArrayElementAccess){
 
             }else if(node instanceof StructFieldAccess){
+                String nameStruct = node.children.get(0).value;
+                String nameStructField = node.children.get(1).value;
+                String type = isTheStrucDefined(root, nameStruct, nameStructField);
+                System.out.println("JE SUIS ICI");
+                return type;
 
             }else if(node instanceof Variable){
+                System.out.println(node.children);
                 Node parent = getParent(root, node.children.get(0).value);
                 String typeDeclaration = parent.children.get(0).children.get(0).value;
                 return typeDeclaration;
@@ -144,6 +160,8 @@ public class SemanticAnalysis {
         return " blabl ";
     }
 
+
+
     private Boolean isItACondition(Expression expression) throws SemanticException {
         Node childrenNode = expression.children.get(0);
         if(childrenNode instanceof BinaryExpression){
@@ -159,8 +177,6 @@ public class SemanticAnalysis {
     }
 
     private void isTheSameTypeOperator(String leftOperator, String rightOperator) throws SemanticException {
-        System.out.println(leftOperator);
-        System.out.println(rightOperator);
         if(!leftOperator.equals(rightOperator)){
             throw new SemanticException("OperatorError");
         }
@@ -214,22 +230,6 @@ public class SemanticAnalysis {
 
     }
 
-    void checkBooleanCondition(Node booleanExpression){
-        ArrayList<Node> expressionChildren = booleanExpression.children;
-        //regarder si il y a == ,<,>,!=, true, false, =<,=>
-        //function call qui retourne un boolean
-        for(Node nodeChildren : expressionChildren){
-            if(nodeChildren instanceof FunctionCall){
-                //comment retrouver le returnType en fonction de la fonctionCall et pas la method
-            }else if (nodeChildren instanceof BinaryExpression){
-                ArrayList<Node> childrenBinaryExpression = nodeChildren.children;
-                if(childrenBinaryExpression.get(1) instanceof BinaryOperator){
-                    ArrayList<String> comparisonOperator= new ArrayList<>(Arrays.asList("==", "<", ">", "<=", ">="));
-                }
-            }
-        }
-    }
-
     void checkAssignment(){
 
     }
@@ -255,6 +255,39 @@ public class SemanticAnalysis {
                     return returnType; // Retourne le type de retour si trouvé dans les enfants
                 }
             }
+        }
+        return null;
+    }
+
+
+    private String isTheStrucDefined(Node node, String nameStruct, String nameStructField) throws SemanticException {
+        if (node == null) {
+            throw new SemanticException("No declaration of the structure");
+        }
+        if (node instanceof StructDeclaration) {
+            StructDeclaration structDeclarationDecl = (StructDeclaration) node;
+            if (structDeclarationDecl.children.get(0).value.equals(nameStruct)) {
+                ArrayList<Node> children = structDeclarationDecl.children;
+                for(Node structField : children){
+                    if(structField instanceof StructField){
+                        if(structField.children.get(1).value.equals(nameStructField)){
+                            return structField.children.get(0).children.get(0).value;
+                        }
+                    }
+                } throw new SemanticException("No declaration of the structField");
+            }
+        }
+        if (node.children != null) {
+            for (Node child : node.children) {
+                // Appel récursif avec child seulement si child n'est pas null
+                String typeStructAccess = isTheStrucDefined(child, nameStruct,nameStructField);
+                if (typeStructAccess != null) {
+                    return typeStructAccess; // Retourne le type de retour si trouvé dans les enfants
+                }
+            }
+        }
+        else{
+            throw new SemanticException("No declaration of the structure");
         }
         return null;
     }
