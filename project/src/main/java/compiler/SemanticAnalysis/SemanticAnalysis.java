@@ -37,7 +37,13 @@ public class SemanticAnalysis {
                 Type leftDeclaration = (Type) childrenDeclaration.get(0);
                 Expression rightDeclaration = (Expression) childrenDeclaration.get(2);
                 String rightDclrt = getType(rightDeclaration);
-                isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
+                System.out.println(rightDclrt);
+                if(rightDeclaration.children.get(0) instanceof ArrayElementAccess){
+                    isTheSameTypeWithArrayElementAccess(leftDeclaration.children.get(0).value,rightDclrt);
+                }
+                else{
+                    isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
+                }
             }else if(node instanceof StructDeclaration){
 
             }else{
@@ -106,6 +112,7 @@ public class SemanticAnalysis {
                     //1.trouver la structure Point
                     String typeAttribute = isTheStrucDefined(root, structName,attributName);
                     String rightType = getType((Expression) assignmentChildren.get(1));
+
                     isTheSameType(typeAttribute,rightType);
 
                 }
@@ -124,8 +131,19 @@ public class SemanticAnalysis {
                 return getReturnType((FunctionCall) node,root);
             }
             else if(node instanceof ArrayAndStructAccess){ //... = array[e].attribute
-
-
+                String arrayName = node.children.get(0).value; //array
+                Expression e = (Expression) node.children.get(1);  //e
+                String elementAccess = getType((Expression) e);
+                if(!elementAccess.equals("int")){
+                    throw new SemanticException("TypeError");
+                }
+                String attributName = node.children.get(2).value;  //attribute
+                Node variableDeclaration = getParent(root, arrayName); // on verifie que array est bien déclaré
+                String structName = variableDeclaration.children.get(0).children.get(0).value; //Point[]
+                //est ce que la struct Point a bien un attribut x, c'est le leftType
+                //1.trouver la structure Point
+                String typeAttribute = isTheStrucDefined(root, structName,attributName);
+                return typeAttribute;
             }else if(node instanceof ArrayElementAccess){//...=array[6]
                 //1. on cherche le type du tableau
                 String arrayName = node.children.get(0).value;
@@ -217,6 +235,7 @@ public class SemanticAnalysis {
             throw new SemanticException("No declaration of the array");
         }
         if (node instanceof GlobalDeclaration) {
+            System.out.println("Je suis iciiiiii");
             if (node.children.get(1).value.equals(arrayName)) {
                 String type = node.children.get(0).children.get(0).value;
                 if(type.contains("[")){//être sur que c un tableau et pas juste une variable
