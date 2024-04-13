@@ -40,6 +40,8 @@ public class SemanticAnalysis {
                 isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
             }else if(node instanceof StructDeclaration){
 
+            }else{
+                throw new SemanticException("No Matching Type for the Declaration "+ node);
             }
         }
     }
@@ -59,7 +61,7 @@ public class SemanticAnalysis {
                 Type leftDeclaration = (Type) globalNode.get(0);
                 Expression rightDeclaration = (Expression) globalNode.get(2);
                 String rightDclrt = getType(rightDeclaration);
-                isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
+                isTheSameTypeWithArrayElementAccess(leftDeclaration.children.get(0).value,rightDclrt);
             }else if(nodeChildren instanceof Assignment){
                 ArrayList<Node> assignmentChildren = nodeChildren.children;
                 if(assignmentChildren.get(0) instanceof Variable){ // a = expression
@@ -77,7 +79,7 @@ public class SemanticAnalysis {
                     String typeAttribute = isTheStrucDefined(root, structName,nameStructField);
                     String rightType = getType((Expression) assignmentChildren.get(1));
                     isTheSameType(typeAttribute,rightType);
-                }else if(assignmentChildren.get(0) instanceof ArrayElementAccess){
+                }else if(assignmentChildren.get(0) instanceof ArrayElementAccess){ //array[2] = ....
                     //1. on cherche le type du tableau
                     String arrayName = assignmentChildren.get(0).children.get(0).value;
                     String typeArrayDeclaration = isTheArrayDefined(root,arrayName);
@@ -88,9 +90,27 @@ public class SemanticAnalysis {
                     }
                     String typeExpression = getType((Expression) assignmentChildren.get(1));
                     isTheSameType(typeArrayDeclaration,typeExpression);
+
+                }else if (assignmentChildren.get(0) instanceof ArrayAndStructAccess){ // arrayStruct[2].x = ...
+                    String arrayName = assignmentChildren.get(0).children.get(0).value; //arrayStruct
+                    Expression e = (Expression) assignmentChildren.get(0).children.get(1);  //2
+                    String elementAccess = getType((Expression) e);
+                    if(!elementAccess.equals("int")){
+                        throw new SemanticException("TypeError");
+                    }
+                    String attributName = assignmentChildren.get(0).children.get(2).value;  //x
+
+                    Node variableDeclaration = getParent(root, arrayName); // on verifie que arraystruct est bien déclaré
+                    String structName = variableDeclaration.children.get(0).children.get(0).value; //Point[]
+                    //est ce que la struct Point a bien un attribut x, c'est le leftType
+                    //1.trouver la structure Point
+                    String typeAttribute = isTheStrucDefined(root, structName,attributName);
+                    String rightType = getType((Expression) assignmentChildren.get(1));
+                    isTheSameType(typeAttribute,rightType);
+
                 }
                 else{
-                    throw new SemanticException("No this type of assignment :" + nodeChildren.children.get(0));
+                    throw new SemanticException("Not this type of assignment :" + nodeChildren.children.get(0));
                 }
 
             }
@@ -104,7 +124,6 @@ public class SemanticAnalysis {
                 return getReturnType((FunctionCall) node,root);
             }
             else if(node instanceof ArrayAndStructAccess){ //... = array[e].attribute
-
 
 
             }else if(node instanceof ArrayElementAccess){//...=array[6]
@@ -198,11 +217,20 @@ public class SemanticAnalysis {
             throw new SemanticException("No declaration of the array");
         }
         if (node instanceof GlobalDeclaration) {
-            GlobalDeclaration varDecl = (GlobalDeclaration) node;
-            if (varDecl.children.get(1).value.equals(arrayName)) {
-                String type = varDecl.children.get(0).children.get(0).value;
+            if (node.children.get(1).value.equals(arrayName)) {
+                String type = node.children.get(0).children.get(0).value;
                 if(type.contains("[")){//être sur que c un tableau et pas juste une variable
                     return type;
+                }//retourner une erreur si variable ?
+            }
+        }else if(node instanceof VariableDeclaration){
+            if (node.children.get(1).children.get(0).value.equals(arrayName)) {
+                String type = node.children.get(0).children.get(0).value;
+                if(type.contains("[")){//être sur que c un tableau et pas juste une variable
+                    return type;
+                }
+                else{
+                    throw new SemanticException("The declaration of the array is not an array but a variable");
                 }//retourner une erreur si variable ?
             }
         }
@@ -215,9 +243,6 @@ public class SemanticAnalysis {
                     return parentType;
                 }
             }
-        }
-        else{
-            throw new SemanticException("No declaration of the array");
         }
         return null;
     }
@@ -246,6 +271,13 @@ public class SemanticAnalysis {
     void isTheSameType(String left, String right) throws SemanticException {
 
         if(!left.equals(right) && !left.contains(right)){
+            throw new SemanticException("TypeError");
+        }
+    }
+
+    void isTheSameTypeWithArrayElementAccess(String left, String right) throws SemanticException {
+
+        if(!right.contains(left)){
             throw new SemanticException("TypeError");
         }
     }

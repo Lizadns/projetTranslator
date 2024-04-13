@@ -175,8 +175,6 @@ public class TestSA {
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
-        PrintAST p= new PrintAST(program);
-        p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
         String answer = sa.analyzeNode(program);
         assertEquals("Everything is OK!", answer);
@@ -187,12 +185,32 @@ public class TestSA {
     @Test
     public void testArrayElementAccess() throws IOException, SemanticException {
         String input = "int[] array = int[5] ;" +
-                "array[3] = 10;";
+                "array[3+6] = 10;";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
 
         Program program = parser.getAST();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        String answer = sa.analyzeNode(program);
+        assertEquals("Everything is OK!", answer);
+
+    }
+
+    @Test
+    public void testArrayAndStructAccess() throws IOException, SemanticException {
+        String input = "struct Point {\n" +
+                "    int x ;\n" +
+                "    int y;\n" +
+                "}\n" +
+                "Point[] ps;" +
+                "Point e = ps[1];";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        PrintAST p= new PrintAST(program);
+        p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
         String answer = sa.analyzeNode(program);
         assertEquals("Everything is OK!", answer);
