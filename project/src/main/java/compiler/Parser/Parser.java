@@ -6,6 +6,7 @@ import compiler.Lexer.Symbol;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Objects;
 
 
 public class Parser {
@@ -97,7 +98,7 @@ public class Parser {
                     Lexer.addAtBeginning(lookahead.value);
                     lookahead = ancien;
                 }
-                Type type = parseType2();
+                Object[] type = parseType2();
                 if (lookahead.type.equals("AssignmentOperator")||lookahead.value.equals(".")){ //si direct "a =1;"
                     Lexer.addAtBeginning(lookahead.value);
                     lookahead= ancien;
@@ -106,10 +107,14 @@ public class Parser {
                 else {
                     Symbol identifier = match("Identifier");
                     if (lookahead.type.equals("AssignmentOperator")) {
-                        declarations.add(parseGlobalVariableDeclaration(type, identifier));
+                        declarations.add(parseGlobalVariableDeclaration((Type)type[0], identifier));
                     } else { // si c'est "int a;" par ex.
                         Lexer.addAtBeginning(lookahead.value);
                         Lexer.addAtBeginning(identifier.value);
+                        if((boolean)type[1]){
+                            Lexer.addAtBeginning("]");
+                            Lexer.addAtBeginning("[");
+                        }
                         lookahead = ancien;
 
                         break;
@@ -162,10 +167,10 @@ public class Parser {
     public static ArrayList<StructField> parseStructFields() throws IOException{
         ArrayList<StructField> structFields= new ArrayList<>();
         while (!lookahead.value.equals("}")){
-            Type type = parseType2(); //type baseType, struct ou tableaux
+            Object[] type = parseType2(); //type baseType, struct ou tableaux
             Symbol identifier = match("Identifier");
             matchValue(";");
-            structFields.add(new StructField(type, identifier.value));
+            structFields.add(new StructField((Type)type[0], identifier.value));
         }
         return structFields;
     }
@@ -175,6 +180,9 @@ public class Parser {
         match("AssignmentOperator");
         Expression expression = parseExpression();
         matchValue(";");
+        if((expression.children.get(0) instanceof ArrayElementAccess) && type.children.get(0).value.contains("[]")){
+            return new GlobalDeclaration(type, identifier.value, new Expression(new NewArray(new Type(expression.children.get(0).children.get(0).value),(Expression) expression.children.get(0).children.get(1))));
+        }
         return new GlobalDeclaration(type, identifier.value, expression);
     }
 
@@ -212,7 +220,7 @@ public class Parser {
             else if(lookahead.value.equals(".")){
                 matchValue(".");
                 Symbol identifier2 = match("Identifier");
-                new StructFieldAccess(identifier.value, identifier2.value);
+                return new Expression(new StructFieldAccess(identifier.value, identifier2.value));
             }
             Variable v = new Variable(identifier.value);
             return new Expression(v);
@@ -395,7 +403,7 @@ public class Parser {
             match("AssignmentOperator");
             Expression expression = parseExpression();
             matchValue(";");
-            return new Assignment(new ArrayElementAccess(variableName,expressionArray),new StructFieldAccess(variableName,identifier.value),expression);
+            return new Assignment(new ArrayAndStructAccess(variableName,expressionArray,identifier.value),expression);
         }
         else {
             match("AssignmentOperator");
@@ -414,21 +422,22 @@ public class Parser {
         return new Type(type.value);
     }
 
-    static Type parseType2() throws IOException {
-        Symbol type = match2("Identifier","BaseType");
-        if (lookahead.value.equals("[")){
+    static Object[] parseType2() throws IOException {
+        Symbol type = match2("Identifier", "BaseType");
+        boolean isArray = lookahead.value.equals("[");
+        if (isArray) {
             Symbol open = matchValue("[");
             Symbol close = matchValue("]");
             String s = type.value + open.value + close.value;
-            return new Type(s);
+            return new Object[]{new Type(s), true};
         }
-        return new Type(type.value);
+        return new Object[]{new Type(type.value), false};
     }
 
     static Param parseParam() throws IOException {
-        Type type = parseType2();
+        Object[] type = parseType2();
         Symbol identifier = match("Identifier");
-        return new Param(type,identifier.value);
+        return new Param((Type)type[0],identifier.value);
     }
 
     static ArrayList<Param> parseParams() throws IOException {
@@ -609,7 +618,7 @@ public class Parser {
     public static VariableDeclaration parseVariableDeclaration(Type type, String nameVariable,Boolean isAnArray) throws IOException{
         matchValue(";");
         if(isAnArray){
-            type.value = type.value + "[]";
+            type.children.get(0).value = type.children.get(0).value + "[]";
         }
         return new VariableDeclaration(type, new Variable(nameVariable));
 
