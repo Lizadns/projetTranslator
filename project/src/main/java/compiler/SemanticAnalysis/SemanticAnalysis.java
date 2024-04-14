@@ -18,33 +18,31 @@ public class SemanticAnalysis {
         ArrayList<Node> listNode = node.children;
         for(Node nodeChildren : listNode){
             if (nodeChildren instanceof Declaration) {
-                checkTypesDeclaration(nodeChildren);
+                checkDeclaration(nodeChildren);
             }
             else if (nodeChildren instanceof Statement) {
-                checkTypesStatement(nodeChildren);
-            }
-            else{
-                throw new SemanticException("No Declaration or Statement");
+                checkStatement(nodeChildren);
             }
         }return "Everything is OK!";
     }
 
-    void checkTypesDeclaration(Node declaration) throws SemanticException {
+    void checkDeclaration(Node declaration) throws SemanticException {
         ArrayList<Node> listNode = declaration.children;
         for(int i =0; i< listNode.size();i++){
             Node node = listNode.get(i);
+            //vérifie que le type des constants declaration et globaldeclaration
             if(node instanceof ConstantDeclaration || node instanceof GlobalDeclaration){
                 ArrayList<Node> childrenDeclaration = node.children;
                 Type leftDeclaration = (Type) childrenDeclaration.get(0);
                 Expression rightDeclaration = (Expression) childrenDeclaration.get(2);
                 String rightDclrt = getType(rightDeclaration);
-                System.out.println(rightDclrt);
                 if(rightDeclaration.children.get(0) instanceof ArrayElementAccess){
                     isTheSameTypeWithArrayElementAccess(leftDeclaration.children.get(0).value,rightDclrt);
                 }
                 else{
                     isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
                 }
+            // struct cannot overwrite existing types
             }else if(node instanceof StructDeclaration){
                 String identifier = node.children.get(0).value;
                 if (identifier.equals("BaseType")){
@@ -70,7 +68,7 @@ public class SemanticAnalysis {
         }
     }
 
-    void checkTypesStatement(Node statement) throws SemanticException {
+    void checkStatement(Node statement) throws SemanticException {
         ArrayList<Node> StatementNodes = statement.children;
         for(Node nodeChildren : StatementNodes){
             if(nodeChildren instanceof IfStatement){
@@ -380,7 +378,6 @@ public class SemanticAnalysis {
     }
 
     void isTheSameType(String left, String right) throws SemanticException {
-
         if(!left.equals(right) && !left.contains(right)){
             throw new SemanticException("TypeError");
         }
@@ -475,7 +472,7 @@ public class SemanticAnalysis {
                             return structField.children.get(0).children.get(0).value;
                         }
                     }
-                } throw new SemanticException("No declaration of the structField");
+                } throw new SemanticException("StructError");
             }
         }
         if (node.children != null) {
