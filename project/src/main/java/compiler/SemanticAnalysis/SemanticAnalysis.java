@@ -150,6 +150,9 @@ public class SemanticAnalysis {
                     i++;
                 }
             }
+            else if (nodeChildren instanceof FunctionCall){
+                checkFunctionCall((FunctionCall) nodeChildren);
+            }
         }
     }
     void checkReturnStatement(String type_expected, BlockInstruction node) throws SemanticException{
@@ -183,35 +186,32 @@ public class SemanticAnalysis {
         }
     }
 
-    void CheckFunctionCall(Expression e)throws SemanticException{
-        if (e.children.get(0) instanceof FunctionCall){
-            FunctionCall call = (FunctionCall) e.children.get(0);
-            String name = call.children.get(0).value;
-            if(root.children.get(1)!=null){
-                int i =0;
-                while(root.children.get(1).children.get(i)!=null){
-                    if (root.children.get(1).children.get(i) instanceof Method){
-                        Method m = (Method) root.children.get(1).children.get(i);
-                        String n =m.children.get(0).children.get(0).value;
-                        if (n.equals(name)){
-                            int j =2;
-                            while (m.children.get(j)!=null && m.children.get(j) instanceof Param){
-                                Param p = (Param) m.children.get(j);
-                                Argument a = (Argument) call.children.get(j-1);
-                                if (a==null){ //mauvais nombre d'argument
-                                    throw new SemanticException("ArgumentError");
-                                }
-                                String typeparam = p.children.get(0).children.get(0).value;
-                                String typearg = getType((Expression)a.children.get(0));
-                                if(!typearg.equals(typeparam)){ //mauvais type
-                                    throw  new SemanticException("ArgumentError");
-                                }
-                                j++;
+    void checkFunctionCall(FunctionCall call)throws SemanticException{
+        String name = call.children.get(0).value;
+        if(root.children.get(1)!=null){
+            int i =0;
+            while(root.children.get(1).children.get(i)!=null){
+                if (root.children.get(1).children.get(i) instanceof Method){
+                    Method m = (Method) root.children.get(1).children.get(i);
+                    String n =m.children.get(0).children.get(0).value;
+                    if (n.equals(name)){
+                        int j =2;
+                        while (m.children.get(j)!=null && m.children.get(j) instanceof Param){
+                            Param p = (Param) m.children.get(j);
+                            Argument a = (Argument) call.children.get(j-1);
+                            if (a==null){ //mauvais nombre d'argument
+                                throw new SemanticException("ArgumentError");
                             }
+                            String typeparam = p.children.get(0).children.get(0).value;
+                            String typearg = getType((Expression)a.children.get(0));
+                            if(!typearg.equals(typeparam)){ //mauvais type
+                                throw  new SemanticException("ArgumentError");
+                            }
+                            j++;
                         }
                     }
-                    i++;
                 }
+                i++;
             }
         }
     }
@@ -219,7 +219,7 @@ public class SemanticAnalysis {
     String getType(Expression expression) throws SemanticException {
         Node node = expression.children.get(0);
         if(node instanceof FunctionCall){
-            CheckFunctionCall((Expression) node);
+            checkFunctionCall((FunctionCall) node);
             return getReturnType((FunctionCall) node,root);
         }
         else if(node instanceof ArrayAndStructAccess){ //... = array[e].attribute
