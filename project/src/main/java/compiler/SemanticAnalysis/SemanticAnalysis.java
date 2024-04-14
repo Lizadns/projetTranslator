@@ -289,6 +289,42 @@ public class SemanticAnalysis {
         return "Empty Expression";
     }
 
+    private String isTheArrayDefined(Node node, String arrayName) throws SemanticException {
+        if (node == null) {
+            throw new SemanticException("No declaration of the array");
+        }
+        if (node instanceof GlobalDeclaration) {
+            System.out.println("Je suis iciiiiii");
+            if (node.children.get(1).value.equals(arrayName)) {
+                String type = node.children.get(0).children.get(0).value;
+                if(type.contains("[")){//être sur que c un tableau et pas juste une variable
+                    return type;
+                }//retourner une erreur si variable ?
+            }
+        }else if(node instanceof VariableDeclaration){
+            if (node.children.get(1).children.get(0).value.equals(arrayName)) {
+                String type = node.children.get(0).children.get(0).value;
+                if(type.contains("[")){//être sur que c un tableau et pas juste une variable
+                    return type;
+                }
+                else{
+                    throw new SemanticException("The declaration of the array is not an array but a variable");
+                }//retourner une erreur si variable ?
+            }
+        }
+
+        if (node.children != null) {
+            for (Node child : node.children) {
+                // Appel récursif avec child seulement si child n'est pas null
+                String parentType = isTheArrayDefined(child, arrayName);
+                if (parentType != null) {
+                    return parentType;
+                }
+            }
+        }
+        return null;
+    }
+
     private Boolean isItACondition(Expression expression) throws SemanticException {
         Node childrenNode = expression.children.get(0);
         if(childrenNode instanceof BinaryExpression){
