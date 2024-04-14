@@ -52,10 +52,8 @@ public class SemanticAnalysis {
                 else{ // overwrite a previously defined structure
                     for (int j =0; j<i; j++){
                         Node node2=listNode.get(j);
-                        if(node2 instanceof StructDeclaration){
-                            if( identifier.equals(node2.children.get(0).value)){
-                                throw new SemanticException("StructError");
-                            }
+                        if(node2 instanceof StructDeclaration && identifier.equals(node2.children.get(0).value)){
+                            throw new SemanticException("StructError");
                         }
                     }
                 }
@@ -87,7 +85,48 @@ public class SemanticAnalysis {
                     String typeExpression = getType((Expression) nodeChildren.children.get(1));
                     isTheSameType(typeVariable,typeExpression);
                 }
-
+            }
+            else if(nodeChildren instanceof Method){
+                String nameMethod= nodeChildren.children.get(0).children.get(0).value;
+                String returnType = nodeChildren.children.get(1).children.get(0).value;
+                int i =2;
+                while(nodeChildren.children.get(i)!=null && nodeChildren.children.get(i) instanceof Param){
+                    i++;
+                }
+                while(nodeChildren.children.get(i)!=null && nodeChildren.children.get(i) instanceof BlockInstruction){
+                    checkReturnStatement(returnType, (BlockInstruction) nodeChildren.children.get(i));
+                    i++;
+                }
+            }
+        }
+    }
+    void checkReturnStatement(String type_expected, BlockInstruction node) throws SemanticException{
+        if (node.children.get(0) instanceof ReturnStatement){
+            Expression e = (Expression) node.children.get(0).children.get(0);
+            String type = getType(e);
+            if(!type.equals(type_expected)){
+                throw new SemanticException("ReturnError");
+            }
+        }
+        else if(node.children.get(0) instanceof WhileStatement){
+            Node n = node.children.get(0);
+            int i =1;
+            while (n.children.get(i)!=null && n.children.get(i) instanceof BlockInstruction){
+                checkReturnStatement(type_expected,(BlockInstruction) n.children.get(i));
+            }
+        }
+        else if(node.children.get(0) instanceof ForStatement){
+            Node n = node.children.get(0);
+            int i =3;
+            while (n.children.get(i)!=null && n.children.get(i) instanceof BlockInstruction){
+                checkReturnStatement(type_expected,(BlockInstruction) n.children.get(i));
+            }
+        }
+        else if(node.children.get(0) instanceof IfStatement){
+            Node n = node.children.get(0);
+            int i =2;
+            while (n.children.get(i)!=null && n.children.get(i) instanceof BlockInstruction){
+                checkReturnStatement(type_expected,(BlockInstruction) n.children.get(i));
             }
         }
     }
