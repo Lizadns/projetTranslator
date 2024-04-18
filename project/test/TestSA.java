@@ -47,6 +47,8 @@ public class TestSA {
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
+        PrintAST p= new PrintAST(program);
+        p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
         String answer = sa.analyzeNode(program);
         assertEquals("Everything is OK!", answer);
@@ -55,8 +57,8 @@ public class TestSA {
     public ExpectedException exceptionRule = ExpectedException.none();
     @Test
     public void testFindReturnTypeFunctionCallFalse() throws IOException, SemanticException {
-        String input = "def float add(float a, int b) { return a + b; }\n" +
-                "int b = add(2.3,3);";
+        String input = "def float add(float a, float b) { return a + b; }\n" +
+                "int b = add(2.3,3.5);";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
@@ -147,8 +149,6 @@ public class TestSA {
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
-        PrintAST p= new PrintAST(program);
-        p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
         String answer = sa.analyzeNode(program);
         assertEquals("Everything is OK!", answer);

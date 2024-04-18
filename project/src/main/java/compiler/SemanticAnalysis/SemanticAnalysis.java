@@ -401,6 +401,10 @@ public class SemanticAnalysis {
             if(node.children.get(1).value.equals(variableName)){
                 return node;
             }
+        }else if(node instanceof Param){
+            if(node.children.get(1).value.equals(variableName)){
+                return node;
+            }
         }
 
         if (node.children != null) {
@@ -411,9 +415,6 @@ public class SemanticAnalysis {
                     return parent; // Si le nœud parent est trouvé dans les enfants, retournez-le
                 }
             }
-        }
-        else{
-            throw new SemanticException("No declaration of the variable");
         }
         return null;
     }
