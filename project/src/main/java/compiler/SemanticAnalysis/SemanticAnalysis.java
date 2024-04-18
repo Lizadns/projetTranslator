@@ -140,10 +140,10 @@ public class SemanticAnalysis {
                 String nameMethod= nodeChildren.children.get(0).children.get(0).value;
                 String returnType = nodeChildren.children.get(1).children.get(0).value;
                 int i =2;
-                while(nodeChildren.children.get(i)!=null && nodeChildren.children.get(i) instanceof Param){
+                while(i<nodeChildren.children.size() && nodeChildren.children.get(i) instanceof Param){
                     i++;
                 }
-                while(nodeChildren.children.get(i)!=null && nodeChildren.children.get(i) instanceof BlockInstruction){
+                while(i<nodeChildren.children.size() && nodeChildren.children.get(i) instanceof BlockInstruction){
                     checkReturnStatement(returnType, (BlockInstruction) nodeChildren.children.get(i));
                     i++;
                 }
@@ -188,7 +188,7 @@ public class SemanticAnalysis {
         String name = call.children.get(0).value;
         if(root.children.get(1)!=null){
             int i =0;
-            while(root.children.get(1).children.get(i)!=null){
+            while(i<root.children.get(1).children.size()){
                 if (root.children.get(1).children.get(i) instanceof Method){
                     Method m = (Method) root.children.get(1).children.get(i);
                     String n =m.children.get(0).children.get(0).value;
