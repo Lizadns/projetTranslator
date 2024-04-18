@@ -164,21 +164,21 @@ public class SemanticAnalysis {
         else if(node.children.get(0) instanceof WhileStatement){
             Node n = node.children.get(0);
             int i =1;
-            while (n.children.get(i)!=null && n.children.get(i) instanceof BlockInstruction){
+            while (i<n.children.size() && n.children.get(i) instanceof BlockInstruction){
                 checkReturnStatement(type_expected,(BlockInstruction) n.children.get(i));
             }
         }
         else if(node.children.get(0) instanceof ForStatement){
             Node n = node.children.get(0);
             int i =3;
-            while (n.children.get(i)!=null && n.children.get(i) instanceof BlockInstruction){
+            while (i<n.children.size() && n.children.get(i) instanceof BlockInstruction){
                 checkReturnStatement(type_expected,(BlockInstruction) n.children.get(i));
             }
         }
         else if(node.children.get(0) instanceof IfStatement){
             Node n = node.children.get(0);
             int i =2;
-            while (n.children.get(i)!=null && n.children.get(i) instanceof BlockInstruction){
+            while (i<n.children.size() && n.children.get(i) instanceof BlockInstruction){
                 checkReturnStatement(type_expected,(BlockInstruction) n.children.get(i));
             }
         }
@@ -194,12 +194,12 @@ public class SemanticAnalysis {
                     String n =m.children.get(0).children.get(0).value;
                     if (n.equals(name)){
                         int j =2;
-                        while (m.children.get(j)!=null && m.children.get(j) instanceof Param){
+                        while (j<m.children.size() && m.children.get(j) instanceof Param){
                             Param p = (Param) m.children.get(j);
-                            Argument a = (Argument) call.children.get(j-1);
-                            if (a==null){ //mauvais nombre d'argument
+                            if (j-1>= call.children.size()){ //mauvais nombre d'argument
                                 throw new SemanticException("ArgumentError");
                             }
+                            Argument a = (Argument) call.children.get(j-1);
                             String typeparam = p.children.get(0).children.get(0).value;
                             String typearg = getType((Expression)a.children.get(0));
                             if(!typearg.equals(typeparam)){ //mauvais type
