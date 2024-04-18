@@ -135,21 +135,6 @@ public class Lexer {
             String[]  keywords = {"free", "struct", "for","def", "final", "if", "else", "while","return"}; //pour les Keywords
             for (int i=0; i< keywords.length; i++ ){
                 if(s.compareTo(keywords[i])==0){
-
-                    if(s.equals("def")){
-                        return new Symbol("KeywordMethod",s);
-
-                    } else if (s.equals("if") || s.equals("else")){
-                        return new Symbol("KeywordCondition",s);
-
-                    }else if(s.equals("while")){
-                        return new Symbol("KeywordWhile",s);
-                    }else if(s.equals("for")){
-                        return new Symbol("KeywordFor",s);
-                    }
-                    else if (s.equals("return")){
-                        return new Symbol("KeywordReturn",s);
-                    }
                     return new Symbol("Keyword", s);
                 }
             }
