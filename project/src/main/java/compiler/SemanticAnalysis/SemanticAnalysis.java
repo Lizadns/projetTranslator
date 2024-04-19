@@ -73,10 +73,13 @@ public class SemanticAnalysis {
         for(Node nodeChildren : StatementNodes){
             if(nodeChildren instanceof IfStatement){
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
+                checkStatement(nodeChildren.children.get(2));
             }else if(nodeChildren instanceof WhileStatement){
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(0));
+                checkStatement(nodeChildren.children.get(1));
             }else if(nodeChildren instanceof ForStatement){
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
+                checkStatement(nodeChildren.children.get(3));
             }
             else if(nodeChildren instanceof GlobalDeclaration){
                 ArrayList<Node> globalNode = nodeChildren.children;
@@ -143,9 +146,12 @@ public class SemanticAnalysis {
                 while(i<nodeChildren.children.size() && nodeChildren.children.get(i) instanceof Param){
                     i++;
                 }
-                while(i<nodeChildren.children.size() && nodeChildren.children.get(i) instanceof BlockInstruction){
-                    checkReturnStatement(returnType, (BlockInstruction) nodeChildren.children.get(i));
-                    i++;
+                if (i<nodeChildren.children.size() && nodeChildren.children.get(i) instanceof BlockInstruction){
+                    int j=0;
+                    while (j< nodeChildren.children.get(i).children.size()){
+                        checkReturnStatement(returnType, nodeChildren.children.get(i).children.get(j));
+                        j++;
+                    }
                 }
             }
             else if (nodeChildren instanceof FunctionCall){
@@ -153,33 +159,45 @@ public class SemanticAnalysis {
             }
         }
     }
-    void checkReturnStatement(String type_expected, BlockInstruction node) throws SemanticException{
-        if (node.children.get(0) instanceof ReturnStatement){
-            Expression e = (Expression) node.children.get(0).children.get(0);
+    void checkReturnStatement(String type_expected, Node node) throws SemanticException{
+        if (node instanceof ReturnStatement){
+            Expression e = (Expression) node.children.get(0);
             String type = getType(e);
             if(!type.equals(type_expected)){
                 throw new SemanticException("ReturnError");
             }
         }
-        else if(node.children.get(0) instanceof WhileStatement){
+        else if(node instanceof WhileStatement){
             Node n = node.children.get(0);
             int i =1;
-            while (i<n.children.size() && n.children.get(i) instanceof BlockInstruction){
-                checkReturnStatement(type_expected,(BlockInstruction) n.children.get(i));
+            if (i<node.children.size() && node.children.get(i) instanceof BlockInstruction){
+                int j=0;
+                while (j< node.children.get(i).children.size()){
+                    checkReturnStatement(type_expected, node.children.get(i).children.get(j));
+                    j++;
+                }
             }
         }
-        else if(node.children.get(0) instanceof ForStatement){
+        else if(node instanceof ForStatement){
             Node n = node.children.get(0);
             int i =3;
-            while (i<n.children.size() && n.children.get(i) instanceof BlockInstruction){
-                checkReturnStatement(type_expected,(BlockInstruction) n.children.get(i));
+            if (i<node.children.size() && node.children.get(i) instanceof BlockInstruction){
+                int j=0;
+                while (j< node.children.get(i).children.size()){
+                    checkReturnStatement(type_expected, node.children.get(i).children.get(j));
+                    j++;
+                }
             }
         }
-        else if(node.children.get(0) instanceof IfStatement){
+        else if(node instanceof IfStatement){
             Node n = node.children.get(0);
             int i =2;
-            while (i<n.children.size() && n.children.get(i) instanceof BlockInstruction){
-                checkReturnStatement(type_expected,(BlockInstruction) n.children.get(i));
+            if (i<node.children.size() && node.children.get(i) instanceof BlockInstruction){
+                int j=0;
+                while (j< node.children.get(i).children.size()){
+                    checkReturnStatement(type_expected, node.children.get(i).children.get(j));
+                    j++;
+                }
             }
         }
     }
@@ -263,6 +281,9 @@ public class SemanticAnalysis {
 
         }else if(node instanceof Variable){
             Node parent = getParent(root, node.children.get(0).value);
+            if(parent==null){
+                throw new SemanticException("No Declaration Variable");
+            }
             String typeDeclaration = parent.children.get(0).children.get(0).value;
             return typeDeclaration;
         }else if (node instanceof Expression){
@@ -324,7 +345,6 @@ public class SemanticAnalysis {
             throw new SemanticException("No declaration of the array");
         }
         if (node instanceof GlobalDeclaration) {
-            System.out.println("Je suis iciiiiii");
             if (node.children.get(1).value.equals(arrayName)) {
                 String type = node.children.get(0).children.get(0).value;
                 if(type.contains("[")){//être sur que c un tableau et pas juste une variable

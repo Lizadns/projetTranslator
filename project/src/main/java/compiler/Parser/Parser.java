@@ -458,34 +458,34 @@ public class Parser {
         matchValue("(");               //debut des parametres
         ArrayList<Param> params = parseParams();
         matchValue(")");              //fin des paramètres
-        ArrayList<BlockInstruction> body = parseBlock();
+        BlockInstruction body = parseBlock();
         return new Method(name, returnType, params, body);
     }
 
-    public static ArrayList<BlockInstruction>  parseBlock() throws IOException {
-        ArrayList<BlockInstruction> blockInstructions = new ArrayList<>();
+    public static BlockInstruction  parseBlock() throws IOException {
+        ArrayList<Node> blockInstructions = new ArrayList<>();
         matchValue("{");
         while(!lookahead.value.equals("}") && !lookahead.equals(null)) {
             if (lookahead.value.equals("if")||lookahead.value.equals("else")){
                 IfStatement ifStatement = parseIfStatement();
-                blockInstructions.add(new BlockInstruction(ifStatement));
+                blockInstructions.add(ifStatement);
             }else if (lookahead.value.equals("while")){
                 WhileStatement whileStatement = parseWhileStatement();
-                blockInstructions.add(new BlockInstruction(whileStatement));
+                blockInstructions.add(whileStatement);
             }
             else if (lookahead.value.equals("for")){
                 ForStatement forStatement = parseForStatement();
-                blockInstructions.add(new BlockInstruction(forStatement));
+                blockInstructions.add(forStatement);
             }else if(lookahead.value.equals("return")){
                 ReturnStatement returnStatement = parseReturnStatement();
-                blockInstructions.add(new BlockInstruction(returnStatement));
+                blockInstructions.add(returnStatement);
             }
             else if (lookahead.type.equals("Identifier")){
                 Type identifierName = parseType();
                 if(lookahead.value.equals("(")){// Identifier(
                     FunctionCall functionCall = parseFunctionCall(identifierName.value);
                     matchValue(";");
-                    blockInstructions.add(new BlockInstruction(functionCall));
+                    blockInstructions.add(functionCall);
                 }else if (lookahead.type.equals("AssignmentOperator")||lookahead.value.equals(".")){
                     //si . dire que c'est un tableau dans parseAssignement
                     Assignment assignment;
@@ -494,18 +494,18 @@ public class Parser {
                     }else{//Identifier =
                         assignment = parseAssignment(identifierName.value, false, false, null);
                     }
-                    blockInstructions.add(new BlockInstruction(assignment));
+                    blockInstructions.add(assignment);
 
                 }
                 else if(lookahead.type.equals("Identifier")){//Identifier Identifier
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.type.equals("AssignmentOperator")){//Identifier Identifier = -> GD
                         GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(identifierName, nameVariable);
-                        blockInstructions.add(new BlockInstruction(globalDeclaration));
+                        blockInstructions.add(globalDeclaration);
                     }
                     else if (lookahead.value.equals(";")){//Identifier Identifier ; -> VD
                         VariableDeclaration variableDeclaration = parseVariableDeclaration(identifierName,nameVariable.value,false);
-                        blockInstructions.add(new BlockInstruction(variableDeclaration));
+                        blockInstructions.add(variableDeclaration);
                     }
                 }else if(lookahead.value.equals("[")){//Identifier [
                     matchValue("[");
@@ -516,10 +516,10 @@ public class Parser {
                             if (lookahead.type.equals("AssignmentOperator")){// Identifier [] Identifier = -> GV
                                 identifierName.value = identifierName.value + "[]";
                                 GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(identifierName, nameVariable);
-                                blockInstructions.add(new BlockInstruction(globalDeclaration));
+                                blockInstructions.add(globalDeclaration);
                             }else if(lookahead.value.equals(";")) {
                                 VariableDeclaration variableDeclaration = parseVariableDeclaration(identifierName,nameVariable.value,true);
-                                blockInstructions.add(new BlockInstruction(variableDeclaration));
+                                blockInstructions.add(variableDeclaration);
                             }
                         }
                     }else if(!lookahead.value.equals("]")){//Identifier [3
@@ -527,10 +527,10 @@ public class Parser {
                         matchValue("]");//Identifier[expression]
                         if(lookahead.value.equals(".")){//Identifier[3].
                             Assignment assignment = parseAssignment(identifierName.value,true,true,expression);
-                            blockInstructions.add(new BlockInstruction(assignment));
+                            blockInstructions.add(assignment);
                         }else if(lookahead.type.equals("AssignmentOperator")){//Identifier [expression] = ..;
                             Assignment assignment = parseAssignment(identifierName.value,true,false,expression);
-                            blockInstructions.add(new BlockInstruction(assignment));
+                            blockInstructions.add(assignment);
                         }
                     }
                 }
@@ -541,12 +541,12 @@ public class Parser {
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.type.equals("AssignmentOperator")){//BaseType Identifier = -> GD
                         GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
-                        blockInstructions.add(new BlockInstruction(globalDeclaration));
+                        blockInstructions.add(globalDeclaration);
                     }
                     else if (lookahead.value.equals(";")){//BaseType Identifier ; -> VD
 
                         VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,false);
-                        blockInstructions.add(new BlockInstruction(variableDeclaration));
+                        blockInstructions.add(variableDeclaration);
                     }
 
                 }else if(lookahead.value.equals("[")){
@@ -555,11 +555,11 @@ public class Parser {
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.value.equals(";")){//BaseType[] Identifier ;
                         VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,true);
-                        blockInstructions.add(new BlockInstruction(variableDeclaration));
+                        blockInstructions.add(variableDeclaration);
                     }else if(lookahead.type.equals("AssignmentOperator")){//BaseType[] Identifier =
                         type.value = type.value + "[]";
                         GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
-                        blockInstructions.add(new BlockInstruction(globalDeclaration));
+                        blockInstructions.add(globalDeclaration);
                     }
 
                 }
@@ -569,7 +569,7 @@ public class Parser {
             }
         }
         matchValue("}");
-        return blockInstructions;
+        return new BlockInstruction(blockInstructions);
     }
 
     public static ReturnStatement parseReturnStatement() throws IOException {
@@ -630,11 +630,11 @@ public class Parser {
             matchValue("(");
             Expression expression = parseExpression();
             matchValue(")");
-            ArrayList<BlockInstruction> body = parseBlock();
+            BlockInstruction body = parseBlock();
             return new IfStatement("if",expression,body);
         } else {
             matchValue("else");
-            ArrayList<BlockInstruction> body = parseBlock();
+            BlockInstruction body = parseBlock();
             return new IfStatement("else",null,body);
         }
     }
@@ -645,11 +645,11 @@ public class Parser {
             matchValue("(");
             Expression expression = parseExpression();
             matchValue(")");
-            ArrayList<BlockInstruction> body = parseBlockStatement();
+            BlockInstruction body = parseBlockStatement();
             return new IfStatement("if",expression,body);
         } else {
             matchValue("else");
-            ArrayList<BlockInstruction> body = parseBlockStatement();
+            BlockInstruction body = parseBlockStatement();
             return new IfStatement("else",null,body);
         }
     }
@@ -659,7 +659,7 @@ public class Parser {
         matchValue("(");
         Expression expression = parseExpression();
         matchValue(")");
-        ArrayList<BlockInstruction> body = parseBlockStatement();
+        BlockInstruction body = parseBlockStatement();
         return new WhileStatement(expression,body);
     }
 
@@ -672,31 +672,31 @@ public class Parser {
         matchValue(",");
         Assignment assignment2 = parseAssignmentRoot();
         matchValue(")");
-        ArrayList<BlockInstruction> body = parseBlockStatement();
+        BlockInstruction body = parseBlockStatement();
         return new ForStatement(assignment1,border,assignment2,body);
     }
 
-    public static ArrayList<BlockInstruction>  parseBlockStatement() throws IOException {
-        ArrayList<BlockInstruction> blockInstructions = new ArrayList<>();
+    public static BlockInstruction  parseBlockStatement() throws IOException {
+        ArrayList<Node> blockInstructions = new ArrayList<>();
         matchValue("{");
         while(!lookahead.value.equals("}") && !lookahead.equals(null)) {
             if (lookahead.value.equals("if")||lookahead.value.equals("else")){
                 IfStatement ifStatement = parseIfStatementNoReturn();
-                blockInstructions.add(new BlockInstruction(ifStatement));
+                blockInstructions.add(ifStatement);
             }else if (lookahead.value.equals("while")){
                 WhileStatement whileStatement = parseWhileStatementNoReturn();
-                blockInstructions.add(new BlockInstruction(whileStatement));
+                blockInstructions.add(whileStatement);
             }
             else if (lookahead.value.equals("for")){
                 ForStatement forStatement = parseForStatementNoReturn();
-                blockInstructions.add(new BlockInstruction(forStatement));
+                blockInstructions.add(forStatement);
             }
             else if (lookahead.type.equals("Identifier")){
-                Type identifierName = parseType();
+                Symbol identifierName = match("Identifier");
                 if(lookahead.value.equals("(")){// Identifier(
                     FunctionCall functionCall = parseFunctionCall(identifierName.value);
                     matchValue(";");
-                    blockInstructions.add(new BlockInstruction(functionCall));
+                    blockInstructions.add(functionCall);
                 }else if (lookahead.type.equals("AssignmentOperator")||lookahead.value.equals(".")){
                     //si . dire que c'est un tableau dans parseAssignement
                     Assignment assignment;
@@ -705,18 +705,18 @@ public class Parser {
                     }else{//Identifier =
                         assignment = parseAssignment(identifierName.value, false, false, null);
                     }
-                    blockInstructions.add(new BlockInstruction(assignment));
+                    blockInstructions.add(assignment);
 
                 }
                 else if(lookahead.type.equals("Identifier")){//Identifier Identifier
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.type.equals("AssignmentOperator")){//Identifier Identifier = -> GD
-                        GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(identifierName, nameVariable);
-                        blockInstructions.add(new BlockInstruction(globalDeclaration));
+                        GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(new Type(identifierName.type), nameVariable);
+                        blockInstructions.add(globalDeclaration);
                     }
                     else if (lookahead.value.equals(";")){//Identifier Identifier ; -> VD
-                        VariableDeclaration variableDeclaration = parseVariableDeclaration(identifierName,nameVariable.value,false);
-                        blockInstructions.add(new BlockInstruction(variableDeclaration));
+                        VariableDeclaration variableDeclaration = parseVariableDeclaration(new Type(identifierName.type),nameVariable.value,false);
+                        blockInstructions.add(variableDeclaration);
                     }
                 }else if(lookahead.value.equals("[")){//Identifier [
                     matchValue("[");
@@ -726,11 +726,11 @@ public class Parser {
                             Symbol nameVariable = match("Identifier");
                             if (lookahead.type.equals("AssignmentOperator")){// Identifier [] Identifier = -> GV
                                 identifierName.value = identifierName.value + "[]";
-                                GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(identifierName, nameVariable);
-                                blockInstructions.add(new BlockInstruction(globalDeclaration));
+                                GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(new Type(identifierName.type), nameVariable);
+                                blockInstructions.add(globalDeclaration);
                             }else if(lookahead.value.equals(";")) {
-                                VariableDeclaration variableDeclaration = parseVariableDeclaration(identifierName,nameVariable.value,true);
-                                blockInstructions.add(new BlockInstruction(variableDeclaration));
+                                VariableDeclaration variableDeclaration = parseVariableDeclaration(new Type(identifierName.type),nameVariable.value,true);
+                                blockInstructions.add(variableDeclaration);
                             }
                         }
                     }else if(!lookahead.value.equals("]")){//Identifier [3
@@ -738,10 +738,10 @@ public class Parser {
                         matchValue("]");//Identifier[expression]
                         if(lookahead.value.equals(".")){//Identifier[3].
                             Assignment assignment = parseAssignment(identifierName.value,true,true,expression);
-                            blockInstructions.add(new BlockInstruction(assignment));
+                            blockInstructions.add(assignment);
                         }else if(lookahead.type.equals("AssignmentOperator")){//Identifier [expression] = ..;
                             Assignment assignment = parseAssignment(identifierName.value,true,false,expression);
-                            blockInstructions.add(new BlockInstruction(assignment));
+                            blockInstructions.add(assignment);
                         }
                     }
                 }
@@ -752,12 +752,12 @@ public class Parser {
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.type.equals("AssignmentOperator")){//BaseType Identifier = -> GD
                         GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
-                        blockInstructions.add(new BlockInstruction(globalDeclaration));
+                        blockInstructions.add(globalDeclaration);
                     }
                     else if (lookahead.value.equals(";")){//BaseType Identifier ; -> VD
 
                         VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,false);
-                        blockInstructions.add(new BlockInstruction(variableDeclaration));
+                        blockInstructions.add(variableDeclaration);
                     }
 
                 }else if(lookahead.value.equals("[")){
@@ -766,11 +766,11 @@ public class Parser {
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.value.equals(";")){//BaseType[] Identifier ;
                         VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,true);
-                        blockInstructions.add(new BlockInstruction(variableDeclaration));
+                        blockInstructions.add(variableDeclaration);
                     }else if(lookahead.type.equals("AssignmentOperator")){//BaseType[] Identifier =
                         type.value = type.value + "[]";
                         GlobalDeclaration globalDeclaration = parseGlobalVariableDeclaration(type, nameVariable);
-                        blockInstructions.add(new BlockInstruction(globalDeclaration));
+                        blockInstructions.add(globalDeclaration);
                     }
 
                 }
@@ -780,7 +780,7 @@ public class Parser {
             }
         }
         matchValue("}");
-        return blockInstructions;
+        return new BlockInstruction(blockInstructions);
     }
 
     public static ForStatement parseForStatement() throws IOException{
@@ -792,7 +792,7 @@ public class Parser {
         matchValue(",");
         Assignment assignment2 = parseAssignmentRoot();
         matchValue(")");
-        ArrayList<BlockInstruction> body = parseBlock();
+        BlockInstruction body = parseBlock();
         return new ForStatement(assignment1,border,assignment2,body);
 
 
@@ -802,7 +802,7 @@ public class Parser {
         matchValue("(");
         Expression expression = parseExpression();
         matchValue(")");
-        ArrayList<BlockInstruction> body = parseBlock();
+        BlockInstruction body = parseBlock();
         return new WhileStatement(expression,body);
     }
 

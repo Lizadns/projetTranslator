@@ -4,9 +4,9 @@ import java.util.ArrayList;
 
 public class WhileStatement extends Node{
 
-    public WhileStatement(Expression expression, ArrayList<BlockInstruction> body){
+    public WhileStatement(Expression expression, BlockInstruction body){
         super("WhileStatement", new ArrayList<>());
         this.children.add(expression);
-        this.children.addAll(body);
+        this.children.add(body);
     }
 }

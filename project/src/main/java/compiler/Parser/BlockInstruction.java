@@ -9,8 +9,8 @@ import static compiler.Parser.Parser.match;
 
 public class BlockInstruction extends Node {
 
-    public BlockInstruction(Node instruction){
-        super("BlockInstruction",new ArrayList<>());
-        this.children.add(instruction);
+    public BlockInstruction(ArrayList<Node> instructions){
+        super("BlockInstructions",new ArrayList<>());
+        this.children.addAll(instructions);
     }
 }
