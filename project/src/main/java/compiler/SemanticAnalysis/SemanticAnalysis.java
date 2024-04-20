@@ -36,6 +36,8 @@ public class SemanticAnalysis {
                 Type leftDeclaration = (Type) childrenDeclaration.get(0);
                 Expression rightDeclaration = (Expression) childrenDeclaration.get(2);
                 String rightDclrt = getType(rightDeclaration);
+                System.out.println(leftDeclaration.children.get(0).value);
+                System.out.println(rightDclrt);
                 if(rightDeclaration.children.get(0) instanceof ArrayElementAccess){
                     isTheSameTypeWithArrayElementAccess(leftDeclaration.children.get(0).value,rightDclrt);
                 }
@@ -159,7 +161,7 @@ public class SemanticAnalysis {
             }
             else if (nodeChildren instanceof FunctionCall){
                 String nameFunctionCall = nodeChildren.children.get(0).value;
-                String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln"};
+                String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln","len","chr","len","floor"};
                 for(String str : builtInProcedures){
                     if(str.equals(nameFunctionCall)){
                         parseBuiltInProcedures(str,(FunctionCall) nodeChildren);
@@ -246,9 +248,11 @@ public class SemanticAnalysis {
         Node node = expression.children.get(0);
         if(node instanceof FunctionCall){
             String nameFunctionCall = node.children.get(0).value;
-            String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln"};
+            System.out.println(nameFunctionCall);
+            String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln","len","floor","chr"};
             for(String str : builtInProcedures){
                 if(str.equals(nameFunctionCall)){
+
                     return parseBuiltInProcedures(str,(FunctionCall) node);
                 }
             }
@@ -370,7 +374,29 @@ public class SemanticAnalysis {
     private String parseBuiltInProcedures(String builtInProcedure,FunctionCall node) throws SemanticException {
         String returnType;
         ArrayList<Node> children = node.children;
-        if(builtInProcedure.contains("read")){
+        System.out.println("children : "+children);
+        if(builtInProcedure.equals("len")||builtInProcedure.equals("floor")||builtInProcedure.equals("chr")){
+            if(children.size()!=2){
+                throw new SemanticException("not the right amomunt of argument");
+            }
+            String argType = getType((Expression) children.get(1).children.get(0));
+            if(builtInProcedure.equals("len")){
+                if(argType.equals("string")||argType.contains("[]")){
+                    return "int";
+                }
+            }else if(builtInProcedure.equals("floor")){
+                if(argType.equals("float")){
+                    return "int";
+                }
+            }else {
+                if(argType.equals("int")){
+                    return "string";
+                }
+            }
+            throw new SemanticException("ArgumentError");
+
+        }
+        else if(builtInProcedure.contains("read")){
             //verifier que rien en argument
             if(children.size()!=1){
                 throw new SemanticException("Arguments found in the built in procedures read");
