@@ -28,10 +28,10 @@ def Person Person(string name, Point location, int[] history){
     return p;
 
 }
-def Point Point(int integer1, int integer2){
-    Point p;
-    p.long=integer1;
-    p.larg=integer2;
-    return p;
 
+def Point Point(int integer1, int integer2){
+    Point pointMethod;
+    pointMethod.long=integer1;
+    pointMethod.larg=integer2;
+    return pointMethod;
 }

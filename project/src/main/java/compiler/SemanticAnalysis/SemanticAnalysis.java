@@ -40,6 +40,7 @@ public class SemanticAnalysis {
                     isTheSameTypeWithArrayElementAccess(leftDeclaration.children.get(0).value,rightDclrt);
                 }
                 else{
+
                     isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
                 }
             // struct cannot overwrite existing types
@@ -157,6 +158,13 @@ public class SemanticAnalysis {
 
             }
             else if (nodeChildren instanceof FunctionCall){
+                String nameFunctionCall = nodeChildren.children.get(0).value;
+                String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln"};
+                for(String str : builtInProcedures){
+                    if(str.equals(nameFunctionCall)){
+                        parseBuiltInProcedures(str,(FunctionCall) nodeChildren);
+                    }
+                }
                 checkFunctionCall((FunctionCall) nodeChildren);
             }
         }
@@ -237,6 +245,13 @@ public class SemanticAnalysis {
     String getType(Expression expression) throws SemanticException {
         Node node = expression.children.get(0);
         if(node instanceof FunctionCall){
+            String nameFunctionCall = node.children.get(0).value;
+            String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln"};
+            for(String str : builtInProcedures){
+                if(str.equals(nameFunctionCall)){
+                    return parseBuiltInProcedures(str,(FunctionCall) node);
+                }
+            }
             checkFunctionCall((FunctionCall) node);
             return getReturnType((FunctionCall) node,root);
         }
@@ -340,6 +355,43 @@ public class SemanticAnalysis {
             throw new SemanticException("No Matching Type for the Expression"+ node);
         }
         return "Empty Expression";
+    }
+
+    private String parseBuiltInProcedures(String builtInProcedure,FunctionCall node) throws SemanticException {
+        String returnType;
+        ArrayList<Node> children = node.children;
+        if(builtInProcedure.contains("read")){
+            //verifier que rien en argument
+            if(children.size()!=1){
+                throw new SemanticException("Arguments found in the built in procedures read");
+            }
+            //trouver le returntype
+            returnType = builtInProcedure.replace("read","");
+            return returnType.toLowerCase();
+        }
+        else if(builtInProcedure.equals("write")){
+            return null;
+        }
+        else if (builtInProcedure.equals("writeln")){
+            return null;
+        }
+
+        else{
+            if(children.size()!=2){
+                throw new SemanticException("Wrong number of argument in the built in procedure writeInt");
+            }
+            String typeArgument = getType((Expression) children.get(1).children.get(0));
+            if(builtInProcedure.equals("writeInt")){
+                if(!typeArgument.equals("int")){
+                    throw new SemanticException("ArgumentError");
+                }
+            }else{//equal writeFloat
+                if(!typeArgument.equals("float")){
+                    throw new SemanticException("ArgumentError");
+                }
+            }
+            return null;
+        }
     }
 
     private String isTheArrayDefined(Node node, String arrayName) throws SemanticException {

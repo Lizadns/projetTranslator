@@ -122,8 +122,6 @@ public class TestSA {
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
-        PrintAST p= new PrintAST(program);
-        p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
         String answer = sa.analyzeNode(program);
         assertEquals("Everything is OK!", answer);
@@ -137,8 +135,6 @@ public class TestSA {
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
-        PrintAST p= new PrintAST(program);
-        p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
         String answer = sa.analyzeNode(program);
         assertEquals("Everything is OK!", answer);
@@ -171,8 +167,6 @@ public class TestSA {
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
-        PrintAST p= new PrintAST(program);
-        p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
         String answer = sa.analyzeNode(program);
         assertEquals("Everything is OK!", answer);
@@ -196,12 +190,25 @@ public class TestSA {
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        String answer = sa.analyzeNode(program);
+        assertEquals("Everything is OK!", answer);
+
+    }
+
+    @Test
+    public void testBuiltIn() throws IOException, SemanticException {
+        String input = "int a;" +
+                "writeInt(a,a);";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
         PrintAST p= new PrintAST(program);
         p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
         String answer = sa.analyzeNode(program);
         assertEquals("Everything is OK!", answer);
-
     }
 
 

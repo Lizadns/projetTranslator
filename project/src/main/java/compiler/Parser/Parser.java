@@ -104,11 +104,17 @@ public class Parser {
                     lookahead= ancien;
                     break;
                 }
+                else if(lookahead.value.equals("(")){//appel à une fonction prédéfinie
+                    Lexer.addAtBeginning(lookahead.value);
+                    lookahead=ancien;
+                    break;
+                }
                 else {
                     Symbol identifier = match("Identifier");
                     if (lookahead.type.equals("AssignmentOperator")) {
                         declarations.add(parseGlobalVariableDeclaration((Type)type[0], identifier));
-                    } else { // si c'est "int a;" par ex.
+                    }
+                    else { // si c'est "int a;" par ex.
                         Lexer.addAtBeginning(lookahead.value);
                         Lexer.addAtBeginning(identifier.value);
                         if((boolean)type[1]){
@@ -287,9 +293,11 @@ public class Parser {
                 statements.add(forStatement);
             }
             else if (lookahead.type.equals("Identifier")){
+
                 Symbol name = match("Identifier");
-                if(lookahead.type.equals("OpeningParenthesis")){// Identifier(
+                if(lookahead.type.equals("OpenParenthesis")){// Identifier(
                     FunctionCall functionCall = parseFunctionCall(name.value);
+                    matchValue(";");
                     statements.add(functionCall);
                 }else if (lookahead.type.equals("AssignmentOperator")||lookahead.value.equals(".")){
                     //si . dire que c'est un tableau dans parseAssignement
