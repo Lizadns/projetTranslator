@@ -147,12 +147,14 @@ public class SemanticAnalysis {
                     i++;
                 }
                 if (i<nodeChildren.children.size() && nodeChildren.children.get(i) instanceof BlockInstruction){
+                    checkStatement(nodeChildren.children.get(i));
                     int j=0;
                     while (j< nodeChildren.children.get(i).children.size()){
                         checkReturnStatement(returnType, nodeChildren.children.get(i).children.get(j));
                         j++;
                     }
                 }
+
             }
             else if (nodeChildren instanceof FunctionCall){
                 checkFunctionCall((FunctionCall) nodeChildren);
@@ -380,7 +382,7 @@ public class SemanticAnalysis {
         if(childrenNode instanceof BinaryExpression){
             String operator = childrenNode.children.get(1).children.get(0).value;
             String leftOperator = getType((Expression) childrenNode.children.get(0));
-            String rightOperator = getType((Expression) childrenNode.children.get(0));
+            String rightOperator = getType((Expression) childrenNode.children.get(2));
             isTheSameTypeOperator(leftOperator,rightOperator);
             if(operator.equals("<")||operator.equals("<=")||operator.equals("==")||operator.equals("!=")||operator.equals(">")||operator.equals(">=")){
                 return true;

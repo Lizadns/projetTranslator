@@ -57,8 +57,8 @@ public class TestSA {
     public ExpectedException exceptionRule = ExpectedException.none();
     @Test
     public void testFindReturnTypeFunctionCallFalse() throws IOException, SemanticException {
-        String input = "def float add(float a, float b) { return a + b; }\n" +
-                "int b = add(2.3,3.5);";
+        String input = "def float add(float a, float b) { if(b>true){return a + b;} }\n" +
+                "float b = add(2.3,3.5);";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
