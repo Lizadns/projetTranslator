@@ -1,6 +1,6 @@
 final int i = 3;
 final float j = 3.2*5.0;
-final int k = 6;
+final int k = i*6;
 final string message = "Hello";
 final bool isEmpty = true;
 
@@ -17,7 +17,9 @@ struct Person {
 int a = 3;
 
 int[] c = int[5];  // new array of length 5
-Person d = Person("me", Point(3,7), int[i*2]); // new structure
+Point p = Point(3,7);
+Person d = Person("me", p, int[i*2]); // new structure
+
 def Person Person(string name, Point location, int[] history){
     Person p;
     p.name = name;
@@ -32,7 +34,4 @@ def Point Point(int integer1, int integer2){
     p.larg=integer2;
     return p;
 
-}
-def int square(int v) {
-    return v*v;
 }

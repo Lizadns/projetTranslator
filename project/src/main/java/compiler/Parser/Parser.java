@@ -490,9 +490,9 @@ public class Parser {
                     //si . dire que c'est un tableau dans parseAssignement
                     Assignment assignment;
                     if(lookahead.value.equals(".")){//Identifier.
-                        assignment = parseAssignment(identifierName.value, false, true, null);
+                        assignment = parseAssignment(identifierName.children.get(0).value, false, true, null);
                     }else{//Identifier =
-                        assignment = parseAssignment(identifierName.value, false, false, null);
+                        assignment = parseAssignment(identifierName.children.get(0).value, false, false, null);
                     }
                     blockInstructions.add(assignment);
 

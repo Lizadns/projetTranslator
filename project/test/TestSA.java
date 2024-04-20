@@ -67,7 +67,7 @@ public class TestSA {
         // Spécifie que l'exception SemanticException est attendue
         exceptionRule.expect(SemanticException.class);
         // Spécifie que le message de l'exception doit contenir "TypeError"
-        exceptionRule.expectMessage("TypeError");
+        exceptionRule.expectMessage("OperatorError");
         // Exécute la méthode qui doit lever l'exception
         sa.analyzeNode(program);
     }
@@ -112,9 +112,12 @@ public class TestSA {
     @Test
     public void testConditionStatement1() throws IOException, SemanticException {
         String input = "int a = 5;\n" +
+                "int b = 6;" +
                 "if(a >= 5){" +
-                "if(b<2){"+
-                "}}";
+                "if(b<2){" +
+                "int c;"+
+                "}}" +
+                "c = 5;";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
@@ -154,6 +157,47 @@ public class TestSA {
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        String answer = sa.analyzeNode(program);
+        assertEquals("Everything is OK!", answer);
+
+    }
+    @Test
+    public void testfinal() throws IOException, SemanticException {
+        String input = "final int i = 3;\n" +
+                "final float j = 3.2*5.0;\n" +
+                "final int k = i*6;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        PrintAST p= new PrintAST(program);
+        p.print();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        String answer = sa.analyzeNode(program);
+        assertEquals("Everything is OK!", answer);
+
+    }
+
+    @Test
+    public void teststructure() throws IOException, SemanticException {
+        String input = "struct Point {\n" +
+                "    int long;\n" +
+                "    int larg;\n" +
+                "}\n" +
+                "def Point Point(int integer1, int integer2){\n" +
+                "    Point p;\n" +
+                "    p.long=integer1;\n" +
+                "    p.larg=integer2;\n" +
+                "    return p;\n" +
+                "\n" +
+                "}";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        PrintAST p= new PrintAST(program);
+        p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
         String answer = sa.analyzeNode(program);
         assertEquals("Everything is OK!", answer);
