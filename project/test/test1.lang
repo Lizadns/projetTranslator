@@ -1,0 +1,38 @@
+final int i = 3;
+final float j = 3.2*5.0;
+final int k = 6;
+final string message = "Hello";
+final bool isEmpty = true;
+
+struct Point{
+    int long;
+    int larg;
+}
+
+struct Person {
+    string name;
+    Point location;
+    int[] history;
+}
+int a = 3;
+
+int[] c = int[5];  // new array of length 5
+Person d = Person("me", Point(3,7), int[i*2]); // new structure
+def Person Person(string name, Point location, int[] history){
+    Person p;
+    p.name = name;
+    p.location = location;
+    p.history = history;
+    return p;
+
+}
+def Point Point(int integer1, int integer2){
+    Point p;
+    p.long=integer1;
+    p.larg=integer2;
+    return p;
+
+}
+def int square(int v) {
+    return v*v;
+}

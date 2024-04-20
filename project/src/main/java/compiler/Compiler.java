@@ -8,13 +8,15 @@ import compiler.Lexer.Symbol;
 import compiler.Parser.Parser;
 import compiler.Parser.PrintAST;
 import compiler.Parser.Program;
+import compiler.SemanticAnalysis.SemanticAnalysis;
+import compiler.SemanticAnalysis.SemanticException;
 
 import java.io.FileReader;
 import java.io.IOException;
 
 
 public class Compiler {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, SemanticException {
 
         Lexer lexer;
         Parser parser;
@@ -71,6 +73,8 @@ public class Compiler {
             PrintAST p= new PrintAST(node);
             p.print();
         }
+        SemanticAnalysis sa = new SemanticAnalysis(node);
+        String answer = sa.analyzeNode(node);
     }
     }
 

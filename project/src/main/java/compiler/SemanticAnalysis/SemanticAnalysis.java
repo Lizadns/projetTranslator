@@ -165,6 +165,8 @@ public class SemanticAnalysis {
         if (node instanceof ReturnStatement){
             Expression e = (Expression) node.children.get(0);
             String type = getType(e);
+            System.out.println(type);
+            System.out.println(type_expected);
             if(!type.equals(type_expected)){
                 throw new SemanticException("ReturnError");
             }
@@ -223,6 +225,8 @@ public class SemanticAnalysis {
                             String typeparam = p.children.get(0).children.get(0).value;
                             String typearg = getType((Expression)a.children.get(0));
                             if(!typearg.equals(typeparam)){ //mauvais type
+                                System.out.println(typearg);
+                                System.out.println(typeparam);
                                 throw  new SemanticException("ArgumentError");
                             }
                             j++;
@@ -312,6 +316,7 @@ public class SemanticAnalysis {
                 //return, si les opérant sont du meme type,
                 // le type de binary expression "ArithmeticOperator","ComparisonOperator","AndOperator","OrOperator"
             String binaryOperator = node.children.get(1).children.get(0).value;
+            System.out.println(node.children.get(1).children.get(0).value);
             String leftOperator = getType((Expression) node.children.get(0));
             String rightOperator = getType((Expression) node.children.get(2));
             isTheSameTypeOperator(leftOperator,rightOperator);
@@ -399,6 +404,8 @@ public class SemanticAnalysis {
 
     void isTheSameType(String left, String right) throws SemanticException {
         if(!left.equals(right)){
+            System.out.println(left);
+            System.out.println(right);
             throw new SemanticException("TypeError");
         }
     }
@@ -423,7 +430,12 @@ public class SemanticAnalysis {
             if(node.children.get(1).value.equals(variableName)){
                 return node;
             }
-        }else if(node instanceof Param){
+        }else if(node instanceof ConstantDeclaration){
+            if(node.children.get(1).value.equals(variableName)){
+                return node;
+            }
+        }
+        else if(node instanceof Param){
             if(node.children.get(1).value.equals(variableName)){
                 return node;
             }
