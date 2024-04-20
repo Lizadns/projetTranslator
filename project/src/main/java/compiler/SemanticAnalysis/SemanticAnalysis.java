@@ -40,8 +40,6 @@ public class SemanticAnalysis {
                     isTheSameTypeWithArrayElementAccess(leftDeclaration.children.get(0).value,rightDclrt);
                 }
                 else{
-                    System.out.println(leftDeclaration.children.get(0).value);
-                    System.out.println(rightDclrt);
                     isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
                 }
             // struct cannot overwrite existing types
@@ -105,8 +103,6 @@ public class SemanticAnalysis {
                     //1.trouver la structure Point
                     String typeAttribute = isTheStrucDefined(root, structName,nameStructField);
                     String rightType = getType((Expression) assignmentChildren.get(1));
-                    System.out.println(typeAttribute);
-                    System.out.println(rightType);
                     isTheSameType(typeAttribute,rightType);
                 }else if(assignmentChildren.get(0) instanceof ArrayElementAccess){ //array[2] = ....
                     //1. on cherche le type du tableau
@@ -473,7 +469,7 @@ public class SemanticAnalysis {
             Method methodInstance = (Method) node;
             String nameMethod = methodInstance.children.get(0).children.get(0).value;
             if (nameMethod.equals(functionCall.children.get(0).value)) {
-                String returnType = methodInstance.children.get(2).children.get(0).children.get(0).value;
+                String returnType = methodInstance.children.get(1).children.get(0).value;
                 return returnType;
             }
         }
@@ -495,7 +491,6 @@ public class SemanticAnalysis {
         if (node == null) {
             throw new SemanticException("No declaration of the structure");
         }
-        System.out.println(node);
         if (node instanceof StructDeclaration) {
 
             StructDeclaration structDeclarationDecl = (StructDeclaration) node;
