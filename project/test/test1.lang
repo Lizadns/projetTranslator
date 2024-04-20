@@ -17,8 +17,8 @@ struct Person {
 int a = 3;
 
 int[] c = int[5];  // new array of length 5
-Point p = Point(3,7);
-Person d = Person("me", p, int[i*2]); // new structure
+Point point = Point(3,7);
+Person d = Person("me", point, int[i*2]); // new structure
 
 def Person Person(string name, Point location, int[] history){
     Person p;
