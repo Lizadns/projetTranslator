@@ -330,7 +330,17 @@ public class SemanticAnalysis {
             String leftOperator = getType((Expression) node.children.get(0));
             String rightOperator = getType((Expression) node.children.get(2));
             isTheSameTypeOperator(leftOperator,rightOperator);
-            if(binaryOperator.equals("+") || binaryOperator.equals("-") || binaryOperator.equals("/") ||binaryOperator.equals("*")){
+            if(binaryOperator.equals("+")){
+                if (rightOperator.equals("bool")){
+                    throw new SemanticException("TypeError in ArithmeticOperation");
+                }return rightOperator;
+            }
+            else if (binaryOperator.equals("%")){
+                if (!rightOperator.equals("int")){
+                    throw new SemanticException("TypeError in ArithmeticOperation");
+                }return "int";
+            }
+            else if(binaryOperator.equals("-") || binaryOperator.equals("/") ||binaryOperator.equals("*")){
                 if(rightOperator.equals("float")){
                     return "float";
                 }else if(rightOperator.equals("int")){
