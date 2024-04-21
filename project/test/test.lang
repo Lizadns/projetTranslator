@@ -1,10 +1,33 @@
-string str = "blabla";
-int testChr = len(str);
+//Good luck
 
-int nt = 6;
-string testLen = chr(nt);
+final string message = "Hello";
+final bool run = true;
 
-float flt = 3.6;
-int testFloor = floor(flt);
+struct Point {
+    int x;
+    int y;
+}
 
-bool testbl = !(true);
+int a = 3;
+
+def int square(int v) {
+    return v*v;
+}
+
+def void main() {
+    int value = readInt();
+    Point p = Point(a, a+value);
+    writeInt(square(value));
+    writeln();
+    int i;
+    for (i=1, i<a, i = i+1) {
+        while (value!=0) {
+            if (run){
+                value = value - 1;
+            } else {
+                write(message);
+            }
+        }
+    }
+    i = (i+2)*2;
+}

@@ -8,6 +8,7 @@ import java.util.List;
 public class SemanticAnalysis {
 
     private Node root;
+    private ArrayList<String> definedStructure = new ArrayList<>();
 
 
 
@@ -65,6 +66,7 @@ public class SemanticAnalysis {
                         }
                     }
                 }
+                definedStructure.add(identifier);
 
             }else{
                 throw new SemanticException("No Matching Type for the Declaration "+ node);
@@ -203,6 +205,10 @@ public class SemanticAnalysis {
         }
     }
 
+    private void checkStructureInitialisation(Node functionCall, String nameStructure) {
+        //verifier que les arguments de la fonction d'initialisation de la structure match avec les fields de la structure
+    }
+
 
     private void checkAssignmentFor(Assignment assignment,Assignment incrementationFor) throws SemanticException {
         //1.verification que c la meme variable
@@ -320,12 +326,19 @@ public class SemanticAnalysis {
         Node node = expression.children.get(0);
         if(node instanceof FunctionCall){
             String nameFunctionCall = node.children.get(0).value;
-            System.out.println(nameFunctionCall);
             String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln","len","floor","chr"};
             for(String str : builtInProcedures){
                 if(str.equals(nameFunctionCall)){
 
                     return parseBuiltInProcedures(str,(FunctionCall) node);
+                }
+            }
+            //si initialisation d'une structure;
+            for (String structure : definedStructure){
+                if(structure.equals(nameFunctionCall)){
+                    //1.Check les arguments
+                    checkStructureInitialisation(node,structure);
+                    return structure;
                 }
             }
             checkFunctionCall((FunctionCall) node);
@@ -594,7 +607,7 @@ public class SemanticAnalysis {
             if(node.children.get(1).value.equals(variableName)){
                 return node;
             }
-        }else if(node instanceof ConstantDeclaration){
+        }else if(node instanceof ConstantDeclaration){//pas besoin de verifier la scope
             if(node.children.get(1).value.equals(variableName)){
                 return node;
             }
