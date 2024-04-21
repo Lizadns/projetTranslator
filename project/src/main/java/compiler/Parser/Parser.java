@@ -481,6 +481,10 @@ public class Parser {
                 WhileStatement whileStatement = parseWhileStatement();
                 blockInstructions.add(whileStatement);
             }
+            else if(lookahead.value.equals("free")){
+                Free freeStatement = parseFreeStatement();
+                blockInstructions.add(freeStatement);
+            }
             else if (lookahead.value.equals("for")){
                 ForStatement forStatement = parseForStatement();
                 blockInstructions.add(forStatement);
@@ -698,6 +702,10 @@ public class Parser {
             else if (lookahead.value.equals("for")){
                 ForStatement forStatement = parseForStatementNoReturn();
                 blockInstructions.add(forStatement);
+            }
+            else if(lookahead.value.equals("free")){
+                Free freeStatement = parseFreeStatement();
+                blockInstructions.add(freeStatement);
             }
             else if (lookahead.type.equals("Identifier")){
                 Symbol identifierName = match("Identifier");

@@ -89,6 +89,16 @@ public class SemanticAnalysis {
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
                 checkStatement(nodeChildren.children.get(3));
             }
+            else if (nodeChildren instanceof Free){
+                Node variableDeclaration = getParent(root,nodeChildren.children.get(0).children.get(0).value);
+                if(variableDeclaration==null){
+                    throw new SemanticException("No declaration of the variable ");
+                }
+                String typeVariable = variableDeclaration.children.get(0).children.get(0).value;
+                if (!typeVariable.contains("[]")&& (typeVariable.equals("int") || typeVariable.equals("bool")||typeVariable.equals("string")||typeVariable.equals("float"))){
+                    throw new SemanticException("free array or struct");
+                }
+            }
             else if(nodeChildren instanceof GlobalDeclaration){
                 ArrayList<Node> globalNode = nodeChildren.children;
                 Type leftDeclaration = (Type) globalNode.get(0);
@@ -644,7 +654,6 @@ public class SemanticAnalysis {
                 return node;
             }
         }
-
         if (node.children != null) {
             for (Node child : node.children) {
                 // Appel récursif avec child seulement si child n'est pas null
@@ -726,8 +735,6 @@ public class SemanticAnalysis {
                 }
             }
         }
-
-
         return null;
     }
 
