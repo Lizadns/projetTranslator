@@ -44,7 +44,6 @@ public class SemanticAnalysis {
                     isTheSameTypeWithArrayElementAccess(leftDeclaration.children.get(0).value,rightDclrt);
                 }
                 else{
-
                     isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
                 }
             // struct cannot overwrite existing types
@@ -200,13 +199,41 @@ public class SemanticAnalysis {
                         parseBuiltInProcedures(str,(FunctionCall) nodeChildren);
                     }
                 }
-                checkFunctionCall((FunctionCall) nodeChildren);
+                if(definedStructure.contains(nameFunctionCall)){
+                    checkStructureInitialisation(nodeChildren);
+                }
+                else{
+                    checkFunctionCall((FunctionCall) nodeChildren);
+                }
             }
         }
     }
 
-    private void checkStructureInitialisation(Node functionCall, String nameStructure) {
+    private void checkStructureInitialisation(Node functionCall) throws SemanticException {
         //verifier que les arguments de la fonction d'initialisation de la structure match avec les fields de la structure
+        for(Node nodeChildren : root.children){
+            if (nodeChildren instanceof Declaration) {
+                for (Node node : nodeChildren.children){
+                    if (node  instanceof StructDeclaration && node.children.get(0).value.equals(functionCall.children.get(0).value)){
+                        int j =1;
+                        while (j<node.children.size() && node.children.get(j) instanceof StructField){
+                            StructField p = (StructField) node.children.get(j);
+                            if (j>= functionCall.children.size()){ //mauvais nombre d'argument
+                                throw new SemanticException("ArgumentError");
+                            }
+                            Argument a = (Argument) functionCall.children.get(j);
+                            String typeparam = p.children.get(0).children.get(0).value;
+                            String typearg = getType((Expression)a.children.get(0));
+                            if(!typearg.equals(typeparam)){ //mauvais type
+                                throw  new SemanticException("ArgumentError");
+                            }
+                            j++;
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
 
@@ -337,7 +364,7 @@ public class SemanticAnalysis {
             for (String structure : definedStructure){
                 if(structure.equals(nameFunctionCall)){
                     //1.Check les arguments
-                    checkStructureInitialisation(node,structure);
+                    checkStructureInitialisation(node);
                     return structure;
                 }
             }
@@ -637,8 +664,6 @@ public class SemanticAnalysis {
         if (!condition && !getType((Expression)conditionStatement).equals("bool")) {
             throw new SemanticException("MissingConditionError");
         }
-
-
     }
 
     void checkAssignment(){
