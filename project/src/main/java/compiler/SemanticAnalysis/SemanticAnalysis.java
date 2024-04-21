@@ -16,7 +16,7 @@ public class SemanticAnalysis {
         this.root = root;
     }
 
-    public String analyzeNode(Node node) throws SemanticException {
+    public int analyzeNode(Node node) throws SemanticException {
         ArrayList<Node> listNode = node.children;
         for(Node nodeChildren : listNode){
             if (nodeChildren instanceof Declaration) {
@@ -25,7 +25,7 @@ public class SemanticAnalysis {
             else if (nodeChildren instanceof Statement) {
                 checkStatement(nodeChildren);
             }
-        }return "Everything is OK!";
+        }return 0;
     }
 
     void checkDeclaration(Node declaration) throws SemanticException {

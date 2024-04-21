@@ -25,8 +25,8 @@ public class TestSA {
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
     }
     @Test
     public void testVariableDeclaration() throws IOException, SemanticException {
@@ -36,8 +36,8 @@ public class TestSA {
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
     }
     @Test
     public void testFindReturnTypeFunctionCall() throws IOException, SemanticException {
@@ -50,8 +50,8 @@ public class TestSA {
         PrintAST p= new PrintAST(program);
         p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
     }
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
@@ -80,8 +80,8 @@ public class TestSA {
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
     }
     @Test
     public void testVariableFault() throws IOException, SemanticException {
@@ -107,8 +107,8 @@ public class TestSA {
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
     }
     @Test
     public void testConditionStatement1() throws IOException, SemanticException {
@@ -124,8 +124,8 @@ public class TestSA {
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
     }
     @Test
     public void testConditionStatement2() throws IOException, SemanticException {
@@ -137,8 +137,8 @@ public class TestSA {
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
     }
 
 
@@ -155,8 +155,8 @@ public class TestSA {
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
 
     }
     @Test
@@ -169,8 +169,8 @@ public class TestSA {
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
 
     }
 
@@ -194,8 +194,8 @@ public class TestSA {
         SemanticAnalysis sa = new SemanticAnalysis(program);
         PrintAST p= new PrintAST(program);
         p.print();
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
 
     }
 
@@ -210,8 +210,8 @@ public class TestSA {
         PrintAST p= new PrintAST(program);
         p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
     }
 
     @Test
@@ -245,8 +245,8 @@ public class TestSA {
         PrintAST p= new PrintAST(program);
         p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
     }
 
     @Test
@@ -306,8 +306,8 @@ public class TestSA {
         PrintAST p= new PrintAST(program);
         p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
     }
 
 
