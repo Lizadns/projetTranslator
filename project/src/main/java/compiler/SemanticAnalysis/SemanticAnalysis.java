@@ -81,6 +81,9 @@ public class SemanticAnalysis {
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(0));
                 checkStatement(nodeChildren.children.get(1));
             }else if(nodeChildren instanceof ForStatement){
+                Assignment assignmentFor = (Assignment) nodeChildren.children.get(0);
+                Assignment incrementationFor = (Assignment) nodeChildren.children.get(2);
+                checkAssignmentFor(assignmentFor,incrementationFor);
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
                 checkStatement(nodeChildren.children.get(3));
             }
@@ -94,6 +97,9 @@ public class SemanticAnalysis {
                 ArrayList<Node> assignmentChildren = nodeChildren.children;
                 if(assignmentChildren.get(0) instanceof Variable){ // a = expression
                     Node variableDeclaration = getParent(root,assignmentChildren.get(0).children.get(0).value);
+                    if(variableDeclaration==null){
+                        throw new SemanticException("No declaration of the variable ");
+                    }
                     String typeVariable = variableDeclaration.children.get(0).children.get(0).value;
                     String typeExpression = getType((Expression) nodeChildren.children.get(1));
                     isTheSameType(typeVariable,typeExpression);
@@ -101,6 +107,9 @@ public class SemanticAnalysis {
                     String nameVariableStruct = assignmentChildren.get(0).children.get(0).value; // p
                     String nameStructField = assignmentChildren.get(0).children.get(1).value; // x
                     Node variableDeclaration = getParent(root, nameVariableStruct); // on verifie que p est bien déclaré
+                    if (variableDeclaration==null){
+                        throw new SemanticException("No declaration of the structure");
+                    }
                     String structName = variableDeclaration.children.get(0).children.get(0).value; //Point
                     //est ce que la struct Point a bien un attribut x, si oui on retourne son type
                     //1.trouver la structure Point
@@ -129,6 +138,9 @@ public class SemanticAnalysis {
                     String attributName = assignmentChildren.get(0).children.get(2).value;  //x
 
                     Node variableDeclaration = getParent(root, arrayName); // on verifie que arraystruct est bien déclaré
+                    if(variableDeclaration==null){
+                        throw new SemanticException("No declaration of the arraystructure");
+                    }
                     String structName = variableDeclaration.children.get(0).children.get(0).value; //Point[]
                     //est ce que la struct Point a bien un attribut x, c'est le leftType
                     //1.trouver la structure Point
@@ -141,6 +153,9 @@ public class SemanticAnalysis {
                 else{
                     throw new SemanticException("Not this type of assignment :" + nodeChildren.children.get(0));
                 }
+            } else if(nodeChildren instanceof VariableDeclaration){//verifier que si structure, quelle existe bien
+
+
             }
             else if(nodeChildren instanceof Method){
                 String nameMethod= nodeChildren.children.get(0).children.get(0).value;
@@ -169,11 +184,49 @@ public class SemanticAnalysis {
                 }
                 checkFunctionCall((FunctionCall) nodeChildren);
             }
-            else{
-                throw new SemanticException("No existing statement");//pour voir si on oublié de prendre en en charge un statement
-            }
         }
     }
+
+
+    private void checkAssignmentFor(Assignment assignment,Assignment incrementationFor) throws SemanticException {
+        //1.verification que c la meme variable
+        String nameAssignment = assignment.children.get(0).children.get(0).value;
+        String nameIncrementation = incrementationFor.children.get(0).children.get(0).value;
+        if(!nameIncrementation.equals(nameAssignment)){
+            throw new SemanticException("Not the same variable in the For assignment and the For incrementation");
+        }
+        //2.verification de l'assignment
+        if(assignment.children.get(0) instanceof Variable){
+
+            Node parentVariable = getParent(root,nameAssignment);
+            if(parentVariable==null){
+                throw new SemanticException("No declaration of the variable assignment for the For statement");
+            }
+            String structName = parentVariable.children.get(0).children.get(0).value;
+            if(!structName.equals("int")){
+                throw new SemanticException("TypeError");
+            }String expression = getType((Expression) assignment.children.get(1));
+            isTheSameType(structName,expression);
+        }
+        //3.verification de l'incrementation(pas sure que ce soit nécessaire)
+        if(incrementationFor.children.get(0) instanceof Variable){
+            Node parentVariable = getParent(root,nameIncrementation);
+            if(parentVariable==null){
+                throw new SemanticException("No declaration of the variable incrementation for the For statement");
+            }
+            String structName = parentVariable.children.get(0).children.get(0).value;
+            if(!structName.equals("int")){
+                throw new SemanticException("TypeError");
+            }String expression = getType((Expression) incrementationFor.children.get(1));
+            isTheSameType(structName,expression);
+            if(!(incrementationFor.children.get(1).children.get(0) instanceof BinaryExpression)){
+                System.out.println(incrementationFor.children.get(1).children.get(0));
+                throw new SemanticException("TypeError");
+            }
+        }
+
+    }
+
     void checkReturnStatement(String type_expected, Node node) throws SemanticException{
         if (node instanceof ReturnStatement){
             Expression e = (Expression) node.children.get(0);

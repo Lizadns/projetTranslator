@@ -83,6 +83,7 @@ public class TestSA {
         String answer = sa.analyzeNode(program);
         assertEquals("Everything is OK!", answer);
     }
+    @Test
     public void testVariableFault() throws IOException, SemanticException {
         String input = "int testV ;\n" +
                 "testMTN = 6 ;";
@@ -191,6 +192,8 @@ public class TestSA {
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
         SemanticAnalysis sa = new SemanticAnalysis(program);
+        PrintAST p= new PrintAST(program);
+        p.print();
         String answer = sa.analyzeNode(program);
         assertEquals("Everything is OK!", answer);
 
@@ -228,6 +231,24 @@ public class TestSA {
         exceptionRule.expectMessage("ArgumentError");
         sa.analyzeNode(program);
     }
+
+    @Test
+    public void testFor() throws IOException, SemanticException {
+        String input = "int a;" +
+                "int b;" +
+                "for(a=0,a<3,a=a+1){" +
+                "}";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        PrintAST p= new PrintAST(program);
+        p.print();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        String answer = sa.analyzeNode(program);
+        assertEquals("Everything is OK!", answer);
+    }
+
 
 
 
