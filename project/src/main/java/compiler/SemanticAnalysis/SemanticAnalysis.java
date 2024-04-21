@@ -361,15 +361,15 @@ public class SemanticAnalysis {
                 }
             }
             //si initialisation d'une structure;
-            for (String structure : definedStructure){
-                if(structure.equals(nameFunctionCall)){
-                    //1.Check les arguments
-                    checkStructureInitialisation(node);
-                    return structure;
-                }
+            if (definedStructure.contains(nameFunctionCall)){
+                //1.Check les arguments
+                checkStructureInitialisation(node);
+                return nameFunctionCall;
             }
-            checkFunctionCall((FunctionCall) node);
-            return getReturnType((FunctionCall) node,root);
+            else{
+                checkFunctionCall((FunctionCall) node);
+                return getReturnType((FunctionCall) node, root);
+            }
         }
         else if(node instanceof ArrayAndStructAccess){ //... = array[e].attribute
             String arrayName = node.children.get(0).value; //array
