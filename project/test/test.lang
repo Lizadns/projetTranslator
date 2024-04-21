@@ -7,4 +7,4 @@ string testLen = chr(nt);
 float flt = 3.6;
 int testFloor = floor(flt);
 
-//bool testbl = !(true);
+bool testbl = !(true);

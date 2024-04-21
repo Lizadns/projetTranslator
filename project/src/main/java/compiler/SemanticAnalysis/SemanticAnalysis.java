@@ -169,6 +169,9 @@ public class SemanticAnalysis {
                 }
                 checkFunctionCall((FunctionCall) nodeChildren);
             }
+            else{
+                throw new SemanticException("No existing statement");//pour voir si on oublié de prendre en en charge un statement
+            }
         }
     }
     void checkReturnStatement(String type_expected, Node node) throws SemanticException{
@@ -324,8 +327,19 @@ public class SemanticAnalysis {
             }
 
         }else if (node instanceof UnaryExpression){
-                // ne rien faire, ça ne change rien
-            return "UnaryExpression";
+            String typeUnary = getType((Expression) node.children.get(1));
+            if(node.children.get(0).children.get(0).value.equals("!")){
+                if(typeUnary.equals("bool")){
+                    return typeUnary;
+                }throw new SemanticException("ArgumentError");
+            }else{
+                if(typeUnary.equals("int")|| typeUnary.equals("float")){
+                    return typeUnary;
+                }else{
+                    throw new SemanticException("TypeError");
+                }
+
+            }
 
         }else if (node instanceof BinaryExpression){
                 //return, si les opérant sont du meme type,

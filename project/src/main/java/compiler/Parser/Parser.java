@@ -253,7 +253,7 @@ public class Parser {
             return new Expression(new Literal(string.value));
         }else if (lookahead.value.equals("!")){ //UnaryExpression !
             UnaryOperator u= new UnaryOperator(lookahead.value);
-            match("!");
+            matchValue("!");
             Expression e = parseExpression();
             return new Expression(new UnaryExpression(u,e));
         }else if (lookahead.type.equals("BaseType")){
