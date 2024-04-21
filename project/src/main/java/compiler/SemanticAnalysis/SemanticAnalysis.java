@@ -38,8 +38,6 @@ public class SemanticAnalysis {
                 Type leftDeclaration = (Type) childrenDeclaration.get(0);
                 Expression rightDeclaration = (Expression) childrenDeclaration.get(2);
                 String rightDclrt = getType(rightDeclaration);
-                System.out.println(leftDeclaration.children.get(0).value);
-                System.out.println(rightDclrt);
                 if(rightDeclaration.children.get(0) instanceof ArrayElementAccess){
                     isTheSameTypeWithArrayElementAccess(leftDeclaration.children.get(0).value,rightDclrt);
                 }
@@ -77,7 +75,9 @@ public class SemanticAnalysis {
         ArrayList<Node> StatementNodes = statement.children;
         for(Node nodeChildren : StatementNodes){
             if(nodeChildren instanceof IfStatement){
-                checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
+                if(nodeChildren.children.get(0).value.equals("if")){
+                    checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
+                }
                 checkStatement(nodeChildren.children.get(2));
             }else if(nodeChildren instanceof WhileStatement){
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(0));
@@ -269,7 +269,6 @@ public class SemanticAnalysis {
             }String expression = getType((Expression) incrementationFor.children.get(1));
             isTheSameType(structName,expression);
             if(!(incrementationFor.children.get(1).children.get(0) instanceof BinaryExpression)){
-                System.out.println(incrementationFor.children.get(1).children.get(0));
                 throw new SemanticException("TypeError");
             }
         }
@@ -497,7 +496,6 @@ public class SemanticAnalysis {
     private String parseBuiltInProcedures(String builtInProcedure,FunctionCall node) throws SemanticException {
         String returnType;
         ArrayList<Node> children = node.children;
-        System.out.println("children : "+children);
         if(builtInProcedure.equals("len")||builtInProcedure.equals("floor")||builtInProcedure.equals("chr")){
             if(children.size()!=2){
                 throw new SemanticException("not the right amomunt of argument");
