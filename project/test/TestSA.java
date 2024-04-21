@@ -249,6 +249,21 @@ public class TestSA {
         assertEquals("Everything is OK!", answer);
     }
 
+    @Test
+    public void testVariableDeclaration2() throws IOException, SemanticException {
+        String input = "Point a;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        PrintAST p= new PrintAST(program);
+        p.print();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("No Declaration of the used Structure");
+        sa.analyzeNode(program);
+    }
+
 
 
 

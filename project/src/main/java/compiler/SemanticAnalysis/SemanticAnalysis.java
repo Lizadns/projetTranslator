@@ -3,6 +3,7 @@ import compiler.Parser.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class SemanticAnalysis {
 
@@ -153,8 +154,23 @@ public class SemanticAnalysis {
                 else{
                     throw new SemanticException("Not this type of assignment :" + nodeChildren.children.get(0));
                 }
-            } else if(nodeChildren instanceof VariableDeclaration){//verifier que si structure, quelle existe bien
+            } else if(nodeChildren instanceof VariableDeclaration){//check if this is a struc declaration that it exist
+                String[] str={"int","int[]","float","float[]","bool","bool[]","string","string[]"};
+                Boolean isABaseType=false;
+                for(String string : str){
+                    if(string.equals(nodeChildren.children.get(0).children.get(0).value)){
+                        isABaseType=true;
+                        break;
+                    }
+                }
+                if(!isABaseType){
+                    String strucName = nodeChildren.children.get(0).children.get(0).value;
+                    String typeStructDeclaration = isTheStrucDefined(root,strucName,null);
+                    if(typeStructDeclaration==null){
+                        throw new SemanticException("No Declaration of the used Structure");
+                    }
 
+                }
 
             }
             else if(nodeChildren instanceof Method){
@@ -651,6 +667,9 @@ public class SemanticAnalysis {
             StructDeclaration structDeclarationDecl = (StructDeclaration) node;
             if (structDeclarationDecl.children.get(0).value.equals(nameStruct)) {
                 ArrayList<Node> children = structDeclarationDecl.children;
+                if(nameStructField==null){
+                    return structDeclarationDecl.children.get(0).value;
+                }
                 for(Node structField : children){
                     if(structField instanceof StructField){
                         if(structField.children.get(1).value.equals(nameStructField)){
