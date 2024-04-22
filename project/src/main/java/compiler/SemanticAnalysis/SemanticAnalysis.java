@@ -143,7 +143,7 @@ public class SemanticAnalysis {
                     String nameStructField = assignmentChildren.get(0).children.get(1).value; // x
                     Node variableDeclaration = getParent(root, nameVariableStruct); // on verifie que p est bien déclaré
                     if (variableDeclaration == null) {
-                        throw new SemanticException("No declaration of the structure");
+                        throw new SemanticException("StructError");
                     }
                     String structName = variableDeclaration.children.get(0).children.get(0).value; //Point
                     Node v = checkScope(null,this.root,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
@@ -365,7 +365,13 @@ public class SemanticAnalysis {
     void checkReturnStatement(String type_expected, Node node) throws SemanticException{
         if (node instanceof ReturnStatement){
             Expression e = (Expression) node.children.get(0);
-            String type = getType(e);
+            String type=null;
+            if (e == null){
+                type= "void";
+            }
+            else{
+                type= getType(e);
+            }
             if(!type.equals(type_expected)){
                 throw new SemanticException("ReturnError");
             }
@@ -807,12 +813,17 @@ public class SemanticAnalysis {
     private String isTheStrucDefined(Node node, String nameStruct, String nameStructField) throws SemanticException {
         System.out.println(nameStruct);
         if (node == null) {
-            throw new SemanticException("No declaration of the structure");
+            throw new SemanticException("StructError");
         }
         if (node instanceof StructDeclaration) {
 
             StructDeclaration structDeclarationDecl = (StructDeclaration) node;
-            if (structDeclarationDecl.children.get(0).value.equals(nameStruct)) {
+            String nameStrucDeclaration = structDeclarationDecl.children.get(0).value;
+
+            if(nameStruct.contains("[]")){
+                nameStrucDeclaration = nameStrucDeclaration + "[]";
+            }
+            if (nameStrucDeclaration.equals(nameStruct)) {
                 ArrayList<Node> children = structDeclarationDecl.children;
                 if(nameStructField==null){
                     return structDeclarationDecl.children.get(0).value;
