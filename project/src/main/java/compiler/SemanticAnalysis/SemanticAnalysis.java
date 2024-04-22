@@ -2,21 +2,18 @@ package compiler.SemanticAnalysis;
 import compiler.Parser.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class SemanticAnalysis {
 
     private Node root;
     private ArrayList<String> definedStructure = new ArrayList<>();
-    private Node scope;
-    private ArrayList<Node> scope2= new ArrayList<>();
+    private ArrayList<Node> scope= new ArrayList<>();
+    private ArrayList<String> constantDeclaration = new ArrayList<>();
 
 
     public SemanticAnalysis(Node root) {
         this.root = root;
-        this.scope = root;
-        this.scope2.add(root);
+        this.scope.add(root);
     }
 
     public int analyzeNode(Node node) throws SemanticException {
@@ -46,6 +43,9 @@ public class SemanticAnalysis {
                 }
                 else{
                     isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
+                }
+                if(node instanceof ConstantDeclaration){
+                    constantDeclaration.add(childrenDeclaration.get(1).value);
                 }
             // struct cannot overwrite existing types
             }else if(node instanceof StructDeclaration){
@@ -81,28 +81,28 @@ public class SemanticAnalysis {
                 if (nodeChildren.children.get(0).value.equals("if")) {
                     checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
                 }
-                this.scope2.add(nodeChildren);
+                this.scope.add(nodeChildren);
                 checkStatement(nodeChildren.children.get(2));
-                this.scope2.remove(nodeChildren);
+                this.scope.remove(nodeChildren);
             } else if (nodeChildren instanceof WhileStatement) {
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(0));
-                this.scope2.add(nodeChildren);
+                this.scope.add(nodeChildren);
                 checkStatement(nodeChildren.children.get(1));
-                this.scope2.remove(nodeChildren);
+                this.scope.remove(nodeChildren);
             } else if (nodeChildren instanceof ForStatement) {
                 Assignment assignmentFor = (Assignment) nodeChildren.children.get(0);
                 Assignment incrementationFor = (Assignment) nodeChildren.children.get(2);
                 checkAssignmentFor(assignmentFor, incrementationFor);
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
-                this.scope2.add(nodeChildren);
+                this.scope.add(nodeChildren);
                 checkStatement(nodeChildren.children.get(3));
-                this.scope2.remove(nodeChildren);
+                this.scope.remove(nodeChildren);
             } else if (nodeChildren instanceof Free) {
                 Node variableDeclaration = getParent(root, nodeChildren.children.get(0).children.get(0).value);
                 if (variableDeclaration == null) {
                     throw new SemanticException("No declaration of the variable ");
                 }
-                Node v = checkScope(this.scope, nodeChildren,nodeChildren.children.get(0).children.get(0).value);
+                Node v = checkScope(this.root, nodeChildren,nodeChildren.children.get(0).children.get(0).value);
                 if(v== null){
                     throw new SemanticException("ScopeError");
                 }
@@ -119,11 +119,14 @@ public class SemanticAnalysis {
             } else if (nodeChildren instanceof Assignment) {
                 ArrayList<Node> assignmentChildren = nodeChildren.children;
                 if (assignmentChildren.get(0) instanceof Variable) { // a = expression
+                    if(constantDeclaration.contains(assignmentChildren.get(0).children.get(0).value)){
+                        throw new SemanticException("Modification of a constant value");
+                    }
                     Node variableDeclaration = getParent(root, assignmentChildren.get(0).children.get(0).value);
                     if (variableDeclaration == null) {
                         throw new SemanticException("No declaration of the variable ");
                     }
-                    Node v = checkScope(this.scope, nodeChildren,assignmentChildren.get(0).children.get(0).value);
+                    Node v = checkScope(this.root, nodeChildren,assignmentChildren.get(0).children.get(0).value);
                     if(v== null){
                         throw new SemanticException("ScopeError");
                     }
@@ -137,7 +140,7 @@ public class SemanticAnalysis {
                     if (variableDeclaration == null) {
                         throw new SemanticException("No declaration of the structure");
                     }
-                    Node v = checkScope(this.scope,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
+                    Node v = checkScope(this.root,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
                     if(v== null){
                         throw new SemanticException("ScopeError");
                     }
@@ -148,15 +151,14 @@ public class SemanticAnalysis {
                     String rightType = getType((Expression) assignmentChildren.get(1));
                     isTheSameType(typeAttribute, rightType);
                 } else if (assignmentChildren.get(0) instanceof ArrayElementAccess) { //array[2] = ....
+                    //1. on cherche le type du tableau
+                    String arrayName = assignmentChildren.get(0).children.get(0).value;
+                    String typeArrayDeclaration = isTheArrayDefined(root, arrayName);
                     //2. que l'expression est bien un int
                     String elementAccess = getType((Expression) assignmentChildren.get(0).children.get(1));
                     if (!elementAccess.equals("int")) {
                         throw new SemanticException("TypeError");
                     }
-                    //1. on cherche le type du tableau
-                    String arrayName = assignmentChildren.get(0).children.get(0).value;
-                    String typeArrayDeclaration = isTheArrayDefined(root, arrayName,elementAccess);
-
                     String typeExpression = getType((Expression) assignmentChildren.get(1));
                     isTheSameType(typeArrayDeclaration, typeExpression);
 
@@ -173,7 +175,7 @@ public class SemanticAnalysis {
                     if (variableDeclaration == null) {
                         throw new SemanticException("No declaration of the arraystructure");
                     }
-                    Node v = checkScope(this.scope,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
+                    Node v = checkScope(this.root,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
                     if(v== null){
                         throw new SemanticException("ScopeError");
                     }
@@ -207,7 +209,7 @@ public class SemanticAnalysis {
                 }
 
             } else if (nodeChildren instanceof Method) {
-                this.scope2.add(nodeChildren);
+                this.scope.add(nodeChildren);
                 String nameMethod = nodeChildren.children.get(0).children.get(0).value;
                 String returnType = nodeChildren.children.get(1).children.get(0).value;
                 int i = 2;
@@ -222,7 +224,7 @@ public class SemanticAnalysis {
                         j++;
                     }
                 }
-                this.scope2.remove(nodeChildren);
+                this.scope.remove(nodeChildren);
             } else if (nodeChildren instanceof FunctionCall) {
                 String nameFunctionCall = nodeChildren.children.get(0).value;
                 String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln", "len", "chr", "len", "floor"};
@@ -264,7 +266,7 @@ public class SemanticAnalysis {
         }
         if(begin.children!=null) {
             for (Node child : begin.children) {
-                if (!(child instanceof ForStatement || child instanceof WhileStatement || child instanceof IfStatement || child instanceof Method) || this.scope2.contains(child)) {
+                if (!(child instanceof ForStatement || child instanceof WhileStatement || child instanceof IfStatement || child instanceof Method) || this.scope.contains(child)) {
                     Node parent = checkScope(child, end, variableName);
                     if (parent != null) {
                         return parent;
@@ -316,7 +318,7 @@ public class SemanticAnalysis {
             if(parentVariable==null){
                 throw new SemanticException("No declaration of the variable assignment for the For statement");
             }
-            Node v = checkScope(this.scope, assignment ,assignment.children.get(0).children.get(0).value);
+            Node v = checkScope(this.root, assignment ,assignment.children.get(0).children.get(0).value);
             if(v==null){
                 throw new SemanticException("ScopeError");
             }
@@ -332,7 +334,7 @@ public class SemanticAnalysis {
             if(parentVariable==null){
                 throw new SemanticException("No declaration of the variable incrementation for the For statement");
             }
-            Node v = checkScope(this.scope, incrementationFor ,incrementationFor.children.get(0).children.get(0).value);
+            Node v = checkScope(this.root, incrementationFor ,incrementationFor.children.get(0).children.get(0).value);
             if(v==null){
                 throw new SemanticException("ScopeError");
             }
@@ -434,7 +436,6 @@ public class SemanticAnalysis {
             String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln","len","floor","chr"};
             for(String str : builtInProcedures){
                 if(str.equals(nameFunctionCall)){
-
                     return parseBuiltInProcedures(str,(FunctionCall) node);
                 }
             }
@@ -458,7 +459,7 @@ public class SemanticAnalysis {
             }
             String attributName = node.children.get(2).value;  //attribute
             Node variableDeclaration = getParent(root, arrayName); // on verifie que array est bien déclaré
-            Node v = checkScope(this.scope,node, node.children.get(0).value);
+            Node v = checkScope(this.root,node, node.children.get(0).value);
             String structName = variableDeclaration.children.get(0).children.get(0).value; //Point[]
                 //est ce que la struct Point a bien un attribut x, c'est le leftType
                 //1.trouver la structure Point
@@ -467,12 +468,12 @@ public class SemanticAnalysis {
         }else if(node instanceof ArrayElementAccess){//...=array[6]
                 //1. on cherche le type du tableau
             String arrayName = node.children.get(0).value;
+            String typeArrayDeclaration = isTheArrayDefined(root,arrayName);
                 //2. que l'expression est bien un int
             String elementAccess = getType((Expression) node.children.get(1));
             if(!elementAccess.equals("int")){
                 throw new SemanticException("TypeError");
             }
-            String typeArrayDeclaration = isTheArrayDefined(root,arrayName,elementAccess);
             return typeArrayDeclaration;
 
         }else if(node instanceof NewArray){//..=int[5]
@@ -486,7 +487,7 @@ public class SemanticAnalysis {
         else if(node instanceof StructFieldAccess){ // .... = p.x
             String nameStructVariable = node.children.get(0).value; //p
             Node variableDeclaration = getParent(root, nameStructVariable); // on verifie que p est bien déclaré
-            Node v = checkScope(this.scope,node, node.children.get(0).value);
+            Node v = checkScope(this.root,node, node.children.get(0).value);
             String structName = variableDeclaration.children.get(0).children.get(0).value; //Point
             String nameStructField = node.children.get(1).value; //x
             String type = isTheStrucDefined(root, structName, nameStructField);
@@ -497,7 +498,7 @@ public class SemanticAnalysis {
             if(parent==null){
                 throw new SemanticException("No Declaration Variable");
             }
-            Node v = checkScope(this.scope,node, node.children.get(0).value);
+            Node v = checkScope(this.root,node, node.children.get(0).value);
             if(v==null){
                 throw new SemanticException("ScopeError");
             }
@@ -544,15 +545,23 @@ public class SemanticAnalysis {
             if(binaryOperator.equals("+")){
                 if (rightOperator.equals("bool")){
                     throw new SemanticException("TypeError in ArithmeticOperation");
-                }return rightOperator;
+                }
+                if(rightOperator.equals("float")||leftOperator.equals("float")){
+                    return "float";
+                }
+                return rightOperator;
             }
             else if (binaryOperator.equals("%")){
-                if (!rightOperator.equals("int")){
+                if (!rightOperator.equals("int") || !leftOperator.equals("int")){
                     throw new SemanticException("TypeError in ArithmeticOperation");
-                }return "int";
+                }
+                return "int";
             }
             else if(binaryOperator.equals("-") || binaryOperator.equals("/") ||binaryOperator.equals("*")){
-                if(rightOperator.equals("float")){
+                if(binaryOperator.equals("/")){
+                    checkIfZero((Expression) node.children.get(2));
+                }
+                if(rightOperator.equals("float")||leftOperator.equals("float")){
                     return "float";
                 }else if(rightOperator.equals("int")){
                     return "int";
@@ -560,7 +569,13 @@ public class SemanticAnalysis {
                 else{
                     throw new SemanticException("TypeError in ArithmeticOperation");
                 }
-            }else if(binaryOperator.equals("<")||binaryOperator.equals("<=")||binaryOperator.equals("==")||binaryOperator.equals("!=")||binaryOperator.equals(">")||binaryOperator.equals(">=")){
+            }else if(binaryOperator.equals("<")||binaryOperator.equals("<=")||binaryOperator.equals(">")||binaryOperator.equals(">=")){
+                if (!(leftOperator.equals("int"))&& !(leftOperator.equals("float"))){
+                    throw new SemanticException("TypeError in ComparisonOperation");
+                }
+                return "bool";
+            }
+            else if (binaryOperator.equals("==")||binaryOperator.equals("!=")){
                 return "bool";
             }
             else{
@@ -578,6 +593,15 @@ public class SemanticAnalysis {
         return "Empty Expression";
     }
 
+    void checkIfZero(Expression expression) throws  SemanticException{
+        Node node = expression.children.get(0);
+        if(node instanceof Literal && (node.children.get(0).value.equals("0")||node.children.get(0).value.equals("0.0"))){
+            throw new SemanticException("Division by Zero");
+        }
+        else if (node instanceof UnaryExpression){
+            checkIfZero((Expression)node.children.get(1));
+        }
+    }
     private String parseBuiltInProcedures(String builtInProcedure,FunctionCall node) throws SemanticException {
         String returnType;
         ArrayList<Node> children = node.children;
@@ -636,7 +660,7 @@ public class SemanticAnalysis {
         }
     }
 
-    private String isTheArrayDefined(Node node, String arrayName,String elementAccess) throws SemanticException {
+    private String isTheArrayDefined(Node node, String arrayName) throws SemanticException {
         if (node == null) {
             throw new SemanticException("No declaration of the array");
         }
@@ -644,25 +668,14 @@ public class SemanticAnalysis {
             if (node.children.get(1).value.equals(arrayName)) {
                 String type = node.children.get(0).children.get(0).value;
                 if(type.contains("[")){//être sur que c un tableau et pas juste une variable
-                    Expression newArray = (Expression) node.children.get(2);
-                    if(newArray.children.get(0).value.equals("NewArray")){
-                        String size = newArray.children.get(0).children.get(1).value;
-                        if(newArray.children.get(0).children.get(0).value.equals("Literal")){
-                            int sizeInt = Integer.parseInt(size);
-                            int acces = Integer.parseInt(elementAccess);
-                            if(acces>sizeInt-1){
-                                throw new SemanticException("Out of bounds error");
-                            }
-                        }
-                    }
-                    return type;
+                    return type.substring(0,type.length()-2);
                 }//retourner une erreur si variable ?
             }
         }else if(node instanceof VariableDeclaration){
             if (node.children.get(1).children.get(0).value.equals(arrayName)) {
                 String type = node.children.get(0).children.get(0).value;
                 if(type.contains("[")){//être sur que c un tableau et pas juste une variable
-                    return type;
+                    return type.substring(0,type.length()-2);
                 }
                 else{
                     throw new SemanticException("The declaration of the array is not an array but a variable");
@@ -673,7 +686,7 @@ public class SemanticAnalysis {
         if (node.children != null) {
             for (Node child : node.children) {
                 // Appel récursif avec child seulement si child n'est pas null
-                String parentType = isTheArrayDefined(child, arrayName,elementAccess);
+                String parentType = isTheArrayDefined(child, arrayName);
                 if (parentType != null) {
                     return parentType;
                 }
@@ -697,7 +710,13 @@ public class SemanticAnalysis {
     }
 
     private void isTheSameTypeOperator(String leftOperator, String rightOperator) throws SemanticException {
-        if(!leftOperator.equals(rightOperator)){
+        if(leftOperator.equals("float") && rightOperator.equals("int")){
+            rightOperator="float";
+        }
+        if(rightOperator.equals("float") && leftOperator.equals("int")){
+            leftOperator="float";
+        }
+        if(!leftOperator.equals(rightOperator) ){
             throw new SemanticException("OperatorError");
         }
     }
@@ -794,6 +813,7 @@ public class SemanticAnalysis {
             throw new SemanticException("No declaration of the structure");
         }
         if (node instanceof StructDeclaration) {
+
             StructDeclaration structDeclarationDecl = (StructDeclaration) node;
             String nameStrucDeclaration = structDeclarationDecl.children.get(0).value;
 
