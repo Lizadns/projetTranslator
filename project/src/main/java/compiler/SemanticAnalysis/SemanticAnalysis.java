@@ -9,11 +9,12 @@ public class SemanticAnalysis {
 
     private Node root;
     private ArrayList<String> definedStructure = new ArrayList<>();
-
+    private Node scope;
 
 
     public SemanticAnalysis(Node root) {
         this.root = root;
+        this.scope = root;
     }
 
     public int analyzeNode(Node node) throws SemanticException {
@@ -73,152 +74,198 @@ public class SemanticAnalysis {
 
     void checkStatement(Node statement) throws SemanticException {
         ArrayList<Node> StatementNodes = statement.children;
-        for(Node nodeChildren : StatementNodes){
-            if(nodeChildren instanceof IfStatement){
-                if(nodeChildren.children.get(0).value.equals("if")){
+        for (Node nodeChildren : StatementNodes) {
+            if (nodeChildren instanceof IfStatement) {
+                if (nodeChildren.children.get(0).value.equals("if")) {
                     checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
                 }
                 checkStatement(nodeChildren.children.get(2));
-            }else if(nodeChildren instanceof WhileStatement){
+            } else if (nodeChildren instanceof WhileStatement) {
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(0));
                 checkStatement(nodeChildren.children.get(1));
-            }else if(nodeChildren instanceof ForStatement){
+            } else if (nodeChildren instanceof ForStatement) {
                 Assignment assignmentFor = (Assignment) nodeChildren.children.get(0);
                 Assignment incrementationFor = (Assignment) nodeChildren.children.get(2);
-                checkAssignmentFor(assignmentFor,incrementationFor);
+                checkAssignmentFor(assignmentFor, incrementationFor);
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
                 checkStatement(nodeChildren.children.get(3));
-            }
-            else if (nodeChildren instanceof Free){
-                Node variableDeclaration = getParent(root,nodeChildren.children.get(0).children.get(0).value);
-                if(variableDeclaration==null){
+            } else if (nodeChildren instanceof Free) {
+                Node variableDeclaration = getParent(root, nodeChildren.children.get(0).children.get(0).value);
+                if (variableDeclaration == null) {
                     throw new SemanticException("No declaration of the variable ");
                 }
+                Node v = checkScope(this.scope, nodeChildren,nodeChildren.children.get(0).children.get(0).value);
+                if(v== null){
+                    throw new SemanticException("ScopeError");
+                }
                 String typeVariable = variableDeclaration.children.get(0).children.get(0).value;
-                if (!typeVariable.contains("[]")&& (typeVariable.equals("int") || typeVariable.equals("bool")||typeVariable.equals("string")||typeVariable.equals("float"))){
+                if (!typeVariable.contains("[]") && (typeVariable.equals("int") || typeVariable.equals("bool") || typeVariable.equals("string") || typeVariable.equals("float"))) {
                     throw new SemanticException("free array or struct");
                 }
-            }
-            else if(nodeChildren instanceof GlobalDeclaration){
+            } else if (nodeChildren instanceof GlobalDeclaration) {
                 ArrayList<Node> globalNode = nodeChildren.children;
                 Type leftDeclaration = (Type) globalNode.get(0);
                 Expression rightDeclaration = (Expression) globalNode.get(2);
                 String rightDclrt = getType(rightDeclaration);
-                isTheSameTypeWithArrayElementAccess(leftDeclaration.children.get(0).value,rightDclrt);
-            }else if(nodeChildren instanceof Assignment){
+                isTheSameTypeWithArrayElementAccess(leftDeclaration.children.get(0).value, rightDclrt);
+            } else if (nodeChildren instanceof Assignment) {
                 ArrayList<Node> assignmentChildren = nodeChildren.children;
-                if(assignmentChildren.get(0) instanceof Variable){ // a = expression
-                    Node variableDeclaration = getParent(root,assignmentChildren.get(0).children.get(0).value);
-                    if(variableDeclaration==null){
+                if (assignmentChildren.get(0) instanceof Variable) { // a = expression
+                    Node variableDeclaration = getParent(root, assignmentChildren.get(0).children.get(0).value);
+                    if (variableDeclaration == null) {
                         throw new SemanticException("No declaration of the variable ");
+                    }
+                    Node v = checkScope(this.scope, nodeChildren,assignmentChildren.get(0).children.get(0).value);
+                    if(v== null){
+                        throw new SemanticException("ScopeError");
                     }
                     String typeVariable = variableDeclaration.children.get(0).children.get(0).value;
                     String typeExpression = getType((Expression) nodeChildren.children.get(1));
-                    isTheSameType(typeVariable,typeExpression);
-                }else if (assignmentChildren.get(0) instanceof StructFieldAccess){ // p.x = e
+                    isTheSameType(typeVariable, typeExpression);
+                } else if (assignmentChildren.get(0) instanceof StructFieldAccess) { // p.x = e
                     String nameVariableStruct = assignmentChildren.get(0).children.get(0).value; // p
                     String nameStructField = assignmentChildren.get(0).children.get(1).value; // x
                     Node variableDeclaration = getParent(root, nameVariableStruct); // on verifie que p est bien déclaré
-                    if (variableDeclaration==null){
+                    if (variableDeclaration == null) {
                         throw new SemanticException("No declaration of the structure");
+                    }
+                    Node v = checkScope(this.scope,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
+                    if(v== null){
+                        throw new SemanticException("ScopeError");
                     }
                     String structName = variableDeclaration.children.get(0).children.get(0).value; //Point
                     //est ce que la struct Point a bien un attribut x, si oui on retourne son type
                     //1.trouver la structure Point
-                    String typeAttribute = isTheStrucDefined(root, structName,nameStructField);
+                    String typeAttribute = isTheStrucDefined(root, structName, nameStructField);
                     String rightType = getType((Expression) assignmentChildren.get(1));
-                    isTheSameType(typeAttribute,rightType);
-                }else if(assignmentChildren.get(0) instanceof ArrayElementAccess){ //array[2] = ....
+                    isTheSameType(typeAttribute, rightType);
+                } else if (assignmentChildren.get(0) instanceof ArrayElementAccess) { //array[2] = ....
                     //1. on cherche le type du tableau
                     String arrayName = assignmentChildren.get(0).children.get(0).value;
-                    String typeArrayDeclaration = isTheArrayDefined(root,arrayName);
+                    String typeArrayDeclaration = isTheArrayDefined(root, arrayName);
                     //2. que l'expression est bien un int
                     String elementAccess = getType((Expression) assignmentChildren.get(0).children.get(1));
-                    if(!elementAccess.equals("int")){
+                    if (!elementAccess.equals("int")) {
                         throw new SemanticException("TypeError");
                     }
                     String typeExpression = getType((Expression) assignmentChildren.get(1));
-                    isTheSameType(typeArrayDeclaration,typeExpression);
+                    isTheSameType(typeArrayDeclaration, typeExpression);
 
-                }else if (assignmentChildren.get(0) instanceof ArrayAndStructAccess){ // arrayStruct[2].x = ...
+                } else if (assignmentChildren.get(0) instanceof ArrayAndStructAccess) { // arrayStruct[2].x = ...
                     String arrayName = assignmentChildren.get(0).children.get(0).value; //arrayStruct
                     Expression e = (Expression) assignmentChildren.get(0).children.get(1);  //2
                     String elementAccess = getType((Expression) e);
-                    if(!elementAccess.equals("int")){
+                    if (!elementAccess.equals("int")) {
                         throw new SemanticException("TypeError");
                     }
                     String attributName = assignmentChildren.get(0).children.get(2).value;  //x
 
                     Node variableDeclaration = getParent(root, arrayName); // on verifie que arraystruct est bien déclaré
-                    if(variableDeclaration==null){
+                    if (variableDeclaration == null) {
                         throw new SemanticException("No declaration of the arraystructure");
+                    }
+                    Node v = checkScope(this.scope,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
+                    if(v== null){
+                        throw new SemanticException("ScopeError");
                     }
                     String structName = variableDeclaration.children.get(0).children.get(0).value; //Point[]
                     //est ce que la struct Point a bien un attribut x, c'est le leftType
                     //1.trouver la structure Point
-                    String typeAttribute = isTheStrucDefined(root, structName,attributName);
+                    String typeAttribute = isTheStrucDefined(root, structName, attributName);
                     String rightType = getType((Expression) assignmentChildren.get(1));
 
-                    isTheSameType(typeAttribute,rightType);
+                    isTheSameType(typeAttribute, rightType);
 
-                }
-                else{
+                } else {
                     throw new SemanticException("Not this type of assignment :" + nodeChildren.children.get(0));
                 }
-            } else if(nodeChildren instanceof VariableDeclaration){//check if this is a struc declaration that it exist
-                String[] str={"int","int[]","float","float[]","bool","bool[]","string","string[]"};
-                Boolean isABaseType=false;
-                for(String string : str){
-                    if(string.equals(nodeChildren.children.get(0).children.get(0).value)){
-                        isABaseType=true;
+            } else if (nodeChildren instanceof VariableDeclaration) {//check if this is a struc declaration that it exist
+                String[] str = {"int", "int[]", "float", "float[]", "bool", "bool[]", "string", "string[]"};
+                Boolean isABaseType = false;
+                for (String string : str) {
+                    if (string.equals(nodeChildren.children.get(0).children.get(0).value)) {
+                        isABaseType = true;
                         break;
                     }
                 }
-                if(!isABaseType){
+                if (!isABaseType) {
                     String strucName = nodeChildren.children.get(0).children.get(0).value;
-                    String typeStructDeclaration = isTheStrucDefined(root,strucName,null);
-                    if(typeStructDeclaration==null){
+                    String typeStructDeclaration = isTheStrucDefined(root, strucName, null);
+                    if (typeStructDeclaration == null) {
                         throw new SemanticException("No Declaration of the used Structure");
                     }
 
                 }
 
-            }
-            else if(nodeChildren instanceof Method){
-                String nameMethod= nodeChildren.children.get(0).children.get(0).value;
+            } else if (nodeChildren instanceof Method) {
+                Node scopeAvant = this.scope;
+                this.scope = nodeChildren;
+                String nameMethod = nodeChildren.children.get(0).children.get(0).value;
                 String returnType = nodeChildren.children.get(1).children.get(0).value;
-                int i =2;
-                while(i<nodeChildren.children.size() && nodeChildren.children.get(i) instanceof Param){
+                int i = 2;
+                while (i < nodeChildren.children.size() && nodeChildren.children.get(i) instanceof Param) {
                     i++;
                 }
-                if (i<nodeChildren.children.size() && nodeChildren.children.get(i) instanceof BlockInstruction){
+                if (i < nodeChildren.children.size() && nodeChildren.children.get(i) instanceof BlockInstruction) {
                     checkStatement(nodeChildren.children.get(i));
-                    int j=0;
-                    while (j< nodeChildren.children.get(i).children.size()){
+                    int j = 0;
+                    while (j < nodeChildren.children.get(i).children.size()) {
                         checkReturnStatement(returnType, nodeChildren.children.get(i).children.get(j));
                         j++;
                     }
                 }
-
-            }
-            else if (nodeChildren instanceof FunctionCall){
+                this.scope = scopeAvant;
+            } else if (nodeChildren instanceof FunctionCall) {
                 String nameFunctionCall = nodeChildren.children.get(0).value;
-                String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln","len","chr","len","floor"};
-                for(String str : builtInProcedures){
-                    if(str.equals(nameFunctionCall)){
-                        parseBuiltInProcedures(str,(FunctionCall) nodeChildren);
+                String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln", "len", "chr", "len", "floor"};
+                for (String str : builtInProcedures) {
+                    if (str.equals(nameFunctionCall)) {
+                        parseBuiltInProcedures(str, (FunctionCall) nodeChildren);
                     }
                 }
-                if(definedStructure.contains(nameFunctionCall)){
+                if (definedStructure.contains(nameFunctionCall)) {
                     checkStructureInitialisation(nodeChildren);
-                }
-                else{
+                } else {
                     checkFunctionCall((FunctionCall) nodeChildren);
                 }
             }
         }
     }
-
+    Node checkScope(Node begin, Node end, String variableName) throws SemanticException{
+        if (begin.equals(end)) {
+            throw new SemanticException("ScopeError");
+        }
+        if (begin instanceof VariableDeclaration) {
+            VariableDeclaration varDecl = (VariableDeclaration) begin;
+            if (varDecl.children.get(1).children.get(0).value.equals(variableName)) {
+                return begin; // Si le nom de la VariableDeclaration correspond, nous avons trouvé le nœud parent recherché
+            }
+        }else if(begin instanceof GlobalDeclaration){
+            if(begin.children.get(1).value.equals(variableName)){
+                return begin;
+            }
+        }else if(begin instanceof ConstantDeclaration){//pas besoin de verifier la scope
+            if(begin.children.get(1).value.equals(variableName)){
+                return begin;
+            }
+        }
+        else if(begin instanceof Param){
+            if(begin.children.get(1).value.equals(variableName)){
+                return begin;
+            }
+        }
+        if(begin.children!=null) {
+            for (Node child : begin.children) {
+                if (!(child instanceof ForStatement || child instanceof WhileStatement || child instanceof IfStatement || child instanceof Method)) {
+                    Node parent = checkScope(child, end, variableName);
+                    if (parent != null) {
+                        return parent;
+                    }
+                }
+            }
+        }
+        return null;
+    }
     private void checkStructureInitialisation(Node functionCall) throws SemanticException {
         //verifier que les arguments de la fonction d'initialisation de la structure match avec les fields de la structure
         for(Node nodeChildren : root.children){
@@ -261,6 +308,10 @@ public class SemanticAnalysis {
             if(parentVariable==null){
                 throw new SemanticException("No declaration of the variable assignment for the For statement");
             }
+            Node v = checkScope(this.scope, assignment ,assignment.children.get(0).children.get(0).value);
+            if(v==null){
+                throw new SemanticException("ScopeError");
+            }
             String structName = parentVariable.children.get(0).children.get(0).value;
             if(!structName.equals("int")){
                 throw new SemanticException("TypeError");
@@ -272,6 +323,10 @@ public class SemanticAnalysis {
             Node parentVariable = getParent(root,nameIncrementation);
             if(parentVariable==null){
                 throw new SemanticException("No declaration of the variable incrementation for the For statement");
+            }
+            Node v = checkScope(this.scope, incrementationFor ,incrementationFor.children.get(0).children.get(0).value);
+            if(v==null){
+                throw new SemanticException("ScopeError");
             }
             String structName = parentVariable.children.get(0).children.get(0).value;
             if(!structName.equals("int")){
