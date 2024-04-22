@@ -148,14 +148,15 @@ public class SemanticAnalysis {
                     String rightType = getType((Expression) assignmentChildren.get(1));
                     isTheSameType(typeAttribute, rightType);
                 } else if (assignmentChildren.get(0) instanceof ArrayElementAccess) { //array[2] = ....
-                    //1. on cherche le type du tableau
-                    String arrayName = assignmentChildren.get(0).children.get(0).value;
-                    String typeArrayDeclaration = isTheArrayDefined(root, arrayName);
                     //2. que l'expression est bien un int
                     String elementAccess = getType((Expression) assignmentChildren.get(0).children.get(1));
                     if (!elementAccess.equals("int")) {
                         throw new SemanticException("TypeError");
                     }
+                    //1. on cherche le type du tableau
+                    String arrayName = assignmentChildren.get(0).children.get(0).value;
+                    String typeArrayDeclaration = isTheArrayDefined(root, arrayName,elementAccess);
+
                     String typeExpression = getType((Expression) assignmentChildren.get(1));
                     isTheSameType(typeArrayDeclaration, typeExpression);
 
@@ -350,7 +351,13 @@ public class SemanticAnalysis {
     void checkReturnStatement(String type_expected, Node node) throws SemanticException{
         if (node instanceof ReturnStatement){
             Expression e = (Expression) node.children.get(0);
-            String type = getType(e);
+            String type=null;
+            if (e == null){
+                type= "void";
+            }
+            else{
+                type= getType(e);
+            }
             if(!type.equals(type_expected)){
                 throw new SemanticException("ReturnError");
             }
@@ -460,12 +467,12 @@ public class SemanticAnalysis {
         }else if(node instanceof ArrayElementAccess){//...=array[6]
                 //1. on cherche le type du tableau
             String arrayName = node.children.get(0).value;
-            String typeArrayDeclaration = isTheArrayDefined(root,arrayName);
                 //2. que l'expression est bien un int
             String elementAccess = getType((Expression) node.children.get(1));
             if(!elementAccess.equals("int")){
                 throw new SemanticException("TypeError");
             }
+            String typeArrayDeclaration = isTheArrayDefined(root,arrayName,elementAccess);
             return typeArrayDeclaration;
 
         }else if(node instanceof NewArray){//..=int[5]
@@ -629,7 +636,7 @@ public class SemanticAnalysis {
         }
     }
 
-    private String isTheArrayDefined(Node node, String arrayName) throws SemanticException {
+    private String isTheArrayDefined(Node node, String arrayName,String elementAccess) throws SemanticException {
         if (node == null) {
             throw new SemanticException("No declaration of the array");
         }
@@ -637,6 +644,17 @@ public class SemanticAnalysis {
             if (node.children.get(1).value.equals(arrayName)) {
                 String type = node.children.get(0).children.get(0).value;
                 if(type.contains("[")){//être sur que c un tableau et pas juste une variable
+                    Expression newArray = (Expression) node.children.get(2);
+                    if(newArray.children.get(0).value.equals("NewArray")){
+                        String size = newArray.children.get(0).children.get(1).value;
+                        if(newArray.children.get(0).children.get(0).value.equals("Literal")){
+                            int sizeInt = Integer.parseInt(size);
+                            int acces = Integer.parseInt(elementAccess);
+                            if(acces>sizeInt-1){
+                                throw new SemanticException("Out of bounds error");
+                            }
+                        }
+                    }
                     return type;
                 }//retourner une erreur si variable ?
             }
@@ -655,7 +673,7 @@ public class SemanticAnalysis {
         if (node.children != null) {
             for (Node child : node.children) {
                 // Appel récursif avec child seulement si child n'est pas null
-                String parentType = isTheArrayDefined(child, arrayName);
+                String parentType = isTheArrayDefined(child, arrayName,elementAccess);
                 if (parentType != null) {
                     return parentType;
                 }
@@ -776,9 +794,13 @@ public class SemanticAnalysis {
             throw new SemanticException("No declaration of the structure");
         }
         if (node instanceof StructDeclaration) {
-
             StructDeclaration structDeclarationDecl = (StructDeclaration) node;
-            if (structDeclarationDecl.children.get(0).value.equals(nameStruct)) {
+            String nameStrucDeclaration = structDeclarationDecl.children.get(0).value;
+
+            if(nameStruct.contains("[]")){
+                nameStrucDeclaration = nameStrucDeclaration + "[]";
+            }
+            if (nameStrucDeclaration.equals(nameStruct)) {
                 ArrayList<Node> children = structDeclarationDecl.children;
                 if(nameStructField==null){
                     return structDeclarationDecl.children.get(0).value;
