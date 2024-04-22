@@ -444,6 +444,24 @@ public class TestSA {
         assertEquals(0, answer);
     }
 
+    @Test
+    public void testconstant() throws IOException, SemanticException {
+        String input = "final int a = 2;" +
+                "if(true){" +
+                "a= 3;"+
+                "}";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        PrintAST p= new PrintAST(program);
+        p.print();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("Modification of a constant value");
+        int answer = sa.analyzeNode(program);
+    }
+
 
 
 }

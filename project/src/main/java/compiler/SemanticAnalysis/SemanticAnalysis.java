@@ -9,14 +9,14 @@ public class SemanticAnalysis {
 
     private Node root;
     private ArrayList<String> definedStructure = new ArrayList<>();
-    private Node scope;
-    private ArrayList<Node> scope2= new ArrayList<>();
+    private ArrayList<Node> scope= new ArrayList<>();
+
+    private ArrayList<String> constantDeclaration = new ArrayList<>();
 
 
     public SemanticAnalysis(Node root) {
         this.root = root;
-        this.scope = root;
-        this.scope2.add(root);
+        this.scope.add(root);
     }
 
     public int analyzeNode(Node node) throws SemanticException {
@@ -46,6 +46,9 @@ public class SemanticAnalysis {
                 }
                 else{
                     isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
+                }
+                if(node instanceof ConstantDeclaration){
+                    constantDeclaration.add(childrenDeclaration.get(1).value);
                 }
             // struct cannot overwrite existing types
             }else if(node instanceof StructDeclaration){
@@ -81,28 +84,28 @@ public class SemanticAnalysis {
                 if (nodeChildren.children.get(0).value.equals("if")) {
                     checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
                 }
-                this.scope2.add(nodeChildren);
+                this.scope.add(nodeChildren);
                 checkStatement(nodeChildren.children.get(2));
-                this.scope2.remove(nodeChildren);
+                this.scope.remove(nodeChildren);
             } else if (nodeChildren instanceof WhileStatement) {
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(0));
-                this.scope2.add(nodeChildren);
+                this.scope.add(nodeChildren);
                 checkStatement(nodeChildren.children.get(1));
-                this.scope2.remove(nodeChildren);
+                this.scope.remove(nodeChildren);
             } else if (nodeChildren instanceof ForStatement) {
                 Assignment assignmentFor = (Assignment) nodeChildren.children.get(0);
                 Assignment incrementationFor = (Assignment) nodeChildren.children.get(2);
                 checkAssignmentFor(assignmentFor, incrementationFor);
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
-                this.scope2.add(nodeChildren);
+                this.scope.add(nodeChildren);
                 checkStatement(nodeChildren.children.get(3));
-                this.scope2.remove(nodeChildren);
+                this.scope.remove(nodeChildren);
             } else if (nodeChildren instanceof Free) {
                 Node variableDeclaration = getParent(root, nodeChildren.children.get(0).children.get(0).value);
                 if (variableDeclaration == null) {
                     throw new SemanticException("No declaration of the variable ");
                 }
-                Node v = checkScope(this.scope, nodeChildren,nodeChildren.children.get(0).children.get(0).value);
+                Node v = checkScope(this.root, nodeChildren,nodeChildren.children.get(0).children.get(0).value);
                 if(v== null){
                     throw new SemanticException("ScopeError");
                 }
@@ -119,11 +122,14 @@ public class SemanticAnalysis {
             } else if (nodeChildren instanceof Assignment) {
                 ArrayList<Node> assignmentChildren = nodeChildren.children;
                 if (assignmentChildren.get(0) instanceof Variable) { // a = expression
+                    if(constantDeclaration.contains(assignmentChildren.get(0).children.get(0).value)){
+                        throw new SemanticException("Modification of a constant value");
+                    }
                     Node variableDeclaration = getParent(root, assignmentChildren.get(0).children.get(0).value);
                     if (variableDeclaration == null) {
                         throw new SemanticException("No declaration of the variable ");
                     }
-                    Node v = checkScope(this.scope, nodeChildren,assignmentChildren.get(0).children.get(0).value);
+                    Node v = checkScope(this.root, nodeChildren,assignmentChildren.get(0).children.get(0).value);
                     if(v== null){
                         throw new SemanticException("ScopeError");
                     }
@@ -137,7 +143,7 @@ public class SemanticAnalysis {
                     if (variableDeclaration == null) {
                         throw new SemanticException("No declaration of the structure");
                     }
-                    Node v = checkScope(this.scope,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
+                    Node v = checkScope(this.root,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
                     if(v== null){
                         throw new SemanticException("ScopeError");
                     }
@@ -172,7 +178,7 @@ public class SemanticAnalysis {
                     if (variableDeclaration == null) {
                         throw new SemanticException("No declaration of the arraystructure");
                     }
-                    Node v = checkScope(this.scope,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
+                    Node v = checkScope(this.root,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
                     if(v== null){
                         throw new SemanticException("ScopeError");
                     }
@@ -206,7 +212,7 @@ public class SemanticAnalysis {
                 }
 
             } else if (nodeChildren instanceof Method) {
-                this.scope2.add(nodeChildren);
+                this.scope.add(nodeChildren);
                 String nameMethod = nodeChildren.children.get(0).children.get(0).value;
                 String returnType = nodeChildren.children.get(1).children.get(0).value;
                 int i = 2;
@@ -221,7 +227,7 @@ public class SemanticAnalysis {
                         j++;
                     }
                 }
-                this.scope2.remove(nodeChildren);
+                this.scope.remove(nodeChildren);
             } else if (nodeChildren instanceof FunctionCall) {
                 String nameFunctionCall = nodeChildren.children.get(0).value;
                 String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln", "len", "chr", "len", "floor"};
@@ -263,7 +269,7 @@ public class SemanticAnalysis {
         }
         if(begin.children!=null) {
             for (Node child : begin.children) {
-                if (!(child instanceof ForStatement || child instanceof WhileStatement || child instanceof IfStatement || child instanceof Method) || this.scope2.contains(child)) {
+                if (!(child instanceof ForStatement || child instanceof WhileStatement || child instanceof IfStatement || child instanceof Method) || this.scope.contains(child)) {
                     Node parent = checkScope(child, end, variableName);
                     if (parent != null) {
                         return parent;
@@ -315,7 +321,7 @@ public class SemanticAnalysis {
             if(parentVariable==null){
                 throw new SemanticException("No declaration of the variable assignment for the For statement");
             }
-            Node v = checkScope(this.scope, assignment ,assignment.children.get(0).children.get(0).value);
+            Node v = checkScope(this.root, assignment ,assignment.children.get(0).children.get(0).value);
             if(v==null){
                 throw new SemanticException("ScopeError");
             }
@@ -331,7 +337,7 @@ public class SemanticAnalysis {
             if(parentVariable==null){
                 throw new SemanticException("No declaration of the variable incrementation for the For statement");
             }
-            Node v = checkScope(this.scope, incrementationFor ,incrementationFor.children.get(0).children.get(0).value);
+            Node v = checkScope(this.root, incrementationFor ,incrementationFor.children.get(0).children.get(0).value);
             if(v==null){
                 throw new SemanticException("ScopeError");
             }
@@ -451,7 +457,7 @@ public class SemanticAnalysis {
             }
             String attributName = node.children.get(2).value;  //attribute
             Node variableDeclaration = getParent(root, arrayName); // on verifie que array est bien déclaré
-            Node v = checkScope(this.scope,node, node.children.get(0).value);
+            Node v = checkScope(this.root,node, node.children.get(0).value);
             String structName = variableDeclaration.children.get(0).children.get(0).value; //Point[]
                 //est ce que la struct Point a bien un attribut x, c'est le leftType
                 //1.trouver la structure Point
@@ -479,7 +485,7 @@ public class SemanticAnalysis {
         else if(node instanceof StructFieldAccess){ // .... = p.x
             String nameStructVariable = node.children.get(0).value; //p
             Node variableDeclaration = getParent(root, nameStructVariable); // on verifie que p est bien déclaré
-            Node v = checkScope(this.scope,node, node.children.get(0).value);
+            Node v = checkScope(this.root,node, node.children.get(0).value);
             String structName = variableDeclaration.children.get(0).children.get(0).value; //Point
             String nameStructField = node.children.get(1).value; //x
             String type = isTheStrucDefined(root, structName, nameStructField);
@@ -490,7 +496,7 @@ public class SemanticAnalysis {
             if(parent==null){
                 throw new SemanticException("No Declaration Variable");
             }
-            Node v = checkScope(this.scope,node, node.children.get(0).value);
+            Node v = checkScope(this.root,node, node.children.get(0).value);
             if(v==null){
                 throw new SemanticException("ScopeError");
             }
