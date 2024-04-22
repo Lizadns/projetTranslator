@@ -2,15 +2,12 @@ package compiler.SemanticAnalysis;
 import compiler.Parser.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class SemanticAnalysis {
 
     private Node root;
     private ArrayList<String> definedStructure = new ArrayList<>();
     private ArrayList<Node> scope= new ArrayList<>();
-
     private ArrayList<String> constantDeclaration = new ArrayList<>();
 
 
@@ -433,7 +430,6 @@ public class SemanticAnalysis {
             String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln","len","floor","chr"};
             for(String str : builtInProcedures){
                 if(str.equals(nameFunctionCall)){
-
                     return parseBuiltInProcedures(str,(FunctionCall) node);
                 }
             }
@@ -543,15 +539,23 @@ public class SemanticAnalysis {
             if(binaryOperator.equals("+")){
                 if (rightOperator.equals("bool")){
                     throw new SemanticException("TypeError in ArithmeticOperation");
-                }return rightOperator;
+                }
+                if(rightOperator.equals("float")||leftOperator.equals("float")){
+                    return "float";
+                }
+                return rightOperator;
             }
             else if (binaryOperator.equals("%")){
-                if (!rightOperator.equals("int")){
+                if (!rightOperator.equals("int") || !leftOperator.equals("int")){
                     throw new SemanticException("TypeError in ArithmeticOperation");
-                }return "int";
+                }
+                return "int";
             }
             else if(binaryOperator.equals("-") || binaryOperator.equals("/") ||binaryOperator.equals("*")){
-                if(rightOperator.equals("float")){
+                if(binaryOperator.equals("/")){
+                    checkIfZero((Expression) node.children.get(2));
+                }
+                if(rightOperator.equals("float")||leftOperator.equals("float")){
                     return "float";
                 }else if(rightOperator.equals("int")){
                     return "int";
@@ -559,7 +563,13 @@ public class SemanticAnalysis {
                 else{
                     throw new SemanticException("TypeError in ArithmeticOperation");
                 }
-            }else if(binaryOperator.equals("<")||binaryOperator.equals("<=")||binaryOperator.equals("==")||binaryOperator.equals("!=")||binaryOperator.equals(">")||binaryOperator.equals(">=")){
+            }else if(binaryOperator.equals("<")||binaryOperator.equals("<=")||binaryOperator.equals(">")||binaryOperator.equals(">=")){
+                if (!(leftOperator.equals("int"))&& !(leftOperator.equals("float"))){
+                    throw new SemanticException("TypeError in ComparisonOperation");
+                }
+                return "bool";
+            }
+            else if (binaryOperator.equals("==")||binaryOperator.equals("!=")){
                 return "bool";
             }
             else{
@@ -577,6 +587,15 @@ public class SemanticAnalysis {
         return "Empty Expression";
     }
 
+    void checkIfZero(Expression expression) throws  SemanticException{
+        Node node = expression.children.get(0);
+        if(node instanceof Literal && (node.children.get(0).value.equals("0")||node.children.get(0).value.equals("0.0"))){
+            throw new SemanticException("Division by Zero");
+        }
+        else if (node instanceof UnaryExpression){
+            checkIfZero((Expression)node.children.get(1));
+        }
+    }
     private String parseBuiltInProcedures(String builtInProcedure,FunctionCall node) throws SemanticException {
         String returnType;
         ArrayList<Node> children = node.children;
@@ -643,14 +662,14 @@ public class SemanticAnalysis {
             if (node.children.get(1).value.equals(arrayName)) {
                 String type = node.children.get(0).children.get(0).value;
                 if(type.contains("[")){//être sur que c un tableau et pas juste une variable
-                    return type;
+                    return type.substring(0,type.length()-2);
                 }//retourner une erreur si variable ?
             }
         }else if(node instanceof VariableDeclaration){
             if (node.children.get(1).children.get(0).value.equals(arrayName)) {
                 String type = node.children.get(0).children.get(0).value;
                 if(type.contains("[")){//être sur que c un tableau et pas juste une variable
-                    return type;
+                    return type.substring(0,type.length()-2);
                 }
                 else{
                     throw new SemanticException("The declaration of the array is not an array but a variable");
@@ -685,7 +704,13 @@ public class SemanticAnalysis {
     }
 
     private void isTheSameTypeOperator(String leftOperator, String rightOperator) throws SemanticException {
-        if(!leftOperator.equals(rightOperator)){
+        if(leftOperator.equals("float") && rightOperator.equals("int")){
+            rightOperator="float";
+        }
+        if(rightOperator.equals("float") && leftOperator.equals("int")){
+            leftOperator="float";
+        }
+        if(!leftOperator.equals(rightOperator) ){
             throw new SemanticException("OperatorError");
         }
     }
