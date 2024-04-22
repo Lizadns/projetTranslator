@@ -669,6 +669,9 @@ public class SemanticAnalysis {
         if (node instanceof GlobalDeclaration) {
             if (node.children.get(1).value.equals(arrayName)) {
                 String type = node.children.get(0).children.get(0).value;
+                if(type.equals("string")){
+                    return "int";
+                }
                 if(type.contains("[")){//être sur que c un tableau et pas juste une variable
                     return type.substring(0,type.length()-2);
                 }//retourner une erreur si variable ?
