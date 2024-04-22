@@ -110,7 +110,7 @@ public class TestSA {
 
     @Test
     public void testScopeError1() throws IOException, SemanticException {
-        String input = "def int argumentError1(int argument){" +
+        String input = "bool a=true;"+"def int argumentError1(int argument){" +
                 "bool boolean = true;" +
                 "int a = 6;" +
                 "return a + 1;" +

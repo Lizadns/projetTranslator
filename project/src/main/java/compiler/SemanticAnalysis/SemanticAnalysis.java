@@ -10,6 +10,7 @@ public class SemanticAnalysis {
     private ArrayList<Node> scope= new ArrayList<>();
     private ArrayList<Node> constantDeclaration = new ArrayList<>();
     private ArrayList<String> variablesInthisScope= new ArrayList<>();
+    private Boolean a=false;
 
     public SemanticAnalysis(Node root) {
         this.root = root;
@@ -125,6 +126,7 @@ public class SemanticAnalysis {
                 }
                 String typeVariable = variableDeclaration.children.get(0).children.get(0).value;
                 Node v = checkScope(null,this.root, nodeChildren,nodeChildren.children.get(0).children.get(0).value);
+                this.a=false;
                 if(v== null){
                     throw new SemanticException("ScopeError");
                 }else{
@@ -154,6 +156,7 @@ public class SemanticAnalysis {
                     }
                     String typeVariable = variableDeclaration.children.get(0).children.get(0).value;
                     Node v = checkScope(null,this.root, nodeChildren,assignmentChildren.get(0).children.get(0).value);
+                    this.a=false;
                     if(v== null){
                         throw new SemanticException("ScopeError");
                     }
@@ -174,6 +177,7 @@ public class SemanticAnalysis {
                     }
                     String structName = variableDeclaration.children.get(0).children.get(0).value; //Point
                     Node v = checkScope(null,this.root,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
+                    this.a=false;
                     if(v== null){
                         throw new SemanticException("ScopeError");
                     }else{
@@ -211,6 +215,7 @@ public class SemanticAnalysis {
                     }
                     String structName = variableDeclaration.children.get(0).children.get(0).value; //Point[]
                     Node v = checkScope(null,this.root,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
+                    this.a=false;
                     if(v== null){
                         throw new SemanticException("ScopeError");
                     }
@@ -291,6 +296,9 @@ public class SemanticAnalysis {
         if (begin.equals(end) && result==null) {
             throw new SemanticException("ScopeError");
         }
+        if (begin.equals(end) && result!=null) {
+            this.a=true;
+        }
         if (begin instanceof VariableDeclaration) {
             VariableDeclaration varDecl = (VariableDeclaration) begin;
             if (varDecl.children.get(1).children.get(0).value.equals(variableName)) {
@@ -312,7 +320,7 @@ public class SemanticAnalysis {
         }
         if(begin.children!=null) {
             for (Node child : begin.children) {
-                if (!(child instanceof ForStatement || child instanceof WhileStatement || child instanceof IfStatement || child instanceof Method) || this.scope.contains(child)) {
+                if ((!(child instanceof ForStatement || child instanceof WhileStatement || child instanceof IfStatement || child instanceof Method) || this.scope.contains(child)) && this.a==false) {
                     result = checkScope(result, child, end, variableName);
                 }
             }
@@ -363,6 +371,7 @@ public class SemanticAnalysis {
             }
             String structName = parentVariable.children.get(0).children.get(0).value;
             Node v = checkScope(null,this.root, assignment ,assignment.children.get(0).children.get(0).value);
+            this.a=false;
             if(v==null){
                 throw new SemanticException("ScopeError");
             }else{
@@ -381,6 +390,7 @@ public class SemanticAnalysis {
             }
             String structName = parentVariable.children.get(0).children.get(0).value;
             Node v = checkScope(null,this.root, incrementationFor ,incrementationFor.children.get(0).children.get(0).value);
+            this.a=false;
             if(v==null){
                 throw new SemanticException("ScopeError");
             }
@@ -508,6 +518,7 @@ public class SemanticAnalysis {
             String attributName = node.children.get(2).value;  //attribute
             Node variableDeclaration = getParent(root, arrayName); // on verifie que array est bien déclaré
             Node v = checkScope(null,this.root,node, node.children.get(0).value);
+            this.a=false;
             String structName = v.children.get(0).children.get(0).value; //Point[]
                 //est ce que la struct Point a bien un attribut x, c'est le leftType
                 //1.trouver la structure Point
@@ -536,6 +547,7 @@ public class SemanticAnalysis {
             String nameStructVariable = node.children.get(0).value; //p
             Node variableDeclaration = getParent(root, nameStructVariable); // on verifie que p est bien déclaré
             Node v = checkScope(null,this.root,node, node.children.get(0).value);
+            this.a=false;
             String structName = v.children.get(0).children.get(0).value; //Point
             String nameStructField = node.children.get(1).value; //x
             String type = isTheStrucDefined(root, structName, nameStructField);
@@ -548,6 +560,7 @@ public class SemanticAnalysis {
             }
             String typeDeclaration = parent.children.get(0).children.get(0).value;
             Node v = checkScope(null,this.root,node, node.children.get(0).value);
+            this.a=false;
             if(v==null){
                 throw new SemanticException("ScopeError");
             }
@@ -772,6 +785,8 @@ public class SemanticAnalysis {
             leftOperator="float";
         }
         if(!leftOperator.equals(rightOperator) ){
+            System.out.println(leftOperator);
+            System.out.println(rightOperator);
             throw new SemanticException("OperatorError");
         }
     }
