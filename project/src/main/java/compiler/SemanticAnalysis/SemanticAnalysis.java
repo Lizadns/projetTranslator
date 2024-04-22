@@ -138,7 +138,7 @@ public class SemanticAnalysis {
                     String nameStructField = assignmentChildren.get(0).children.get(1).value; // x
                     Node variableDeclaration = getParent(root, nameVariableStruct); // on verifie que p est bien déclaré
                     if (variableDeclaration == null) {
-                        throw new SemanticException("No declaration of the structure");
+                        throw new SemanticException("StructError");
                     }
                     Node v = checkScope(this.root,  nodeChildren ,assignmentChildren.get(0).children.get(0).value);
                     if(v== null){
@@ -810,7 +810,7 @@ public class SemanticAnalysis {
 
     private String isTheStrucDefined(Node node, String nameStruct, String nameStructField) throws SemanticException {
         if (node == null) {
-            throw new SemanticException("No declaration of the structure");
+            throw new SemanticException("StructError");
         }
         if (node instanceof StructDeclaration) {
 
