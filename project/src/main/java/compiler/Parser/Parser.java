@@ -220,6 +220,11 @@ public class Parser {
                     matchValue(".");
                     Symbol identifier2 = match("Identifier");
                     return new Expression(new ArrayAndStructAccess(identifier.value,e, identifier2.value));
+                }else if(lookahead.value.equals("[")){
+                    matchValue("[");
+                    Expression e2 = parseExpression();
+                    matchValue("]");
+                    return new Expression(new CharAccessInStringArray(identifier.value, e,e2));
                 }
                 return new Expression(new ArrayElementAccess(identifier.value,e));
             }
@@ -562,8 +567,8 @@ public class Parser {
                     }
 
                 }else if(lookahead.value.equals("[")){
-                    match("[");
-                    match("]");
+                    matchValue("[");
+                    matchValue("]");
                     Symbol nameVariable = match("Identifier");
                     if(lookahead.value.equals(";")){//BaseType[] Identifier ;
                         VariableDeclaration variableDeclaration = parseVariableDeclaration(type,nameVariable.value,true);
@@ -836,6 +841,7 @@ public class Parser {
             return new Assignment(new StructFieldAccess(identifier.value,identifierStruct.value),expression);
         }
         else if(lookahead.value.equals("[")){
+            matchValue("]");
             Expression expressionArray = parseExpression();
             matchValue("]");
             if(lookahead.type.equals("AssignmentOperator")){

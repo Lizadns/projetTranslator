@@ -535,7 +535,21 @@ public class SemanticAnalysis {
                 return "string";
             }
 
-        }else if (node instanceof UnaryExpression){
+        }else if(node instanceof CharAccessInStringArray){//arrayString[3][2]
+            String arrayStringName = node.children.get(0).value;
+            Node arrayStringDeclaration = getParent(root,arrayStringName);
+            String type = arrayStringDeclaration.children.get(0).children.get(0).value;
+            if(!type.equals("string[]")){
+                throw new SemanticException("Use of a array of 2 dimension for a non-string basetype");
+            }
+            String typeExpression1 = getType((Expression) node.children.get(1));
+            String typeExpression2 = getType((Expression) node.children.get(2));
+            if(!typeExpression2.equals("int")||!typeExpression1.equals("int")){
+                throw new SemanticException("Index not an int");
+            }
+            return "int";
+        }
+        else if (node instanceof UnaryExpression){
             String typeUnary = getType((Expression) node.children.get(1));
             if(node.children.get(0).children.get(0).value.equals("!")){
                 if(typeUnary.equals("bool")){

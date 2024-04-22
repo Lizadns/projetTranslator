@@ -524,8 +524,8 @@ public class TestSA {
     }
     @Test
     public void testString() throws IOException, SemanticException {
-        String input = "string testString = \"hello\";" +
-                "int x = testString[3];";
+        String input = "string[] stringArray = string[2];\n" +
+                "int a = stringArray[1][2+3];";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
@@ -536,4 +536,5 @@ public class TestSA {
         int answer = sa.analyzeNode(program);
         assertEquals(0, answer);
     }
+
 }
