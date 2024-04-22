@@ -74,7 +74,7 @@ public class Compiler {
             p.print();
         }
         SemanticAnalysis sa = new SemanticAnalysis(node);
-        String answer = sa.analyzeNode(node);
+        sa.analyzeNode(node);
     }
     }
 
