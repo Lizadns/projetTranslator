@@ -10,11 +10,13 @@ public class SemanticAnalysis {
     private Node root;
     private ArrayList<String> definedStructure = new ArrayList<>();
     private Node scope;
+    private Node scope2;
 
 
     public SemanticAnalysis(Node root) {
         this.root = root;
         this.scope = root;
+        this.scope2=root;
     }
 
     public int analyzeNode(Node node) throws SemanticException {
@@ -79,16 +81,25 @@ public class SemanticAnalysis {
                 if (nodeChildren.children.get(0).value.equals("if")) {
                     checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
                 }
+                Node scopeAvant = this.scope2;
+                this.scope2 = nodeChildren;
                 checkStatement(nodeChildren.children.get(2));
+                this.scope2= scopeAvant;
             } else if (nodeChildren instanceof WhileStatement) {
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(0));
+                Node scopeAvant = this.scope2;
+                this.scope2 = nodeChildren;
                 checkStatement(nodeChildren.children.get(1));
+                this.scope2= scopeAvant;
             } else if (nodeChildren instanceof ForStatement) {
                 Assignment assignmentFor = (Assignment) nodeChildren.children.get(0);
                 Assignment incrementationFor = (Assignment) nodeChildren.children.get(2);
                 checkAssignmentFor(assignmentFor, incrementationFor);
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
+                Node scopeAvant = this.scope2;
+                this.scope2 = nodeChildren;
                 checkStatement(nodeChildren.children.get(3));
+                this.scope2= scopeAvant;
             } else if (nodeChildren instanceof Free) {
                 Node variableDeclaration = getParent(root, nodeChildren.children.get(0).children.get(0).value);
                 if (variableDeclaration == null) {
@@ -256,7 +267,7 @@ public class SemanticAnalysis {
         }
         if(begin.children!=null) {
             for (Node child : begin.children) {
-                if (!(child instanceof ForStatement || child instanceof WhileStatement || child instanceof IfStatement || child instanceof Method)) {
+                if (!(child instanceof ForStatement || child instanceof WhileStatement || child instanceof IfStatement || child instanceof Method) || this.scope2.equals(child)) {
                     Node parent = checkScope(child, end, variableName);
                     if (parent != null) {
                         return parent;
