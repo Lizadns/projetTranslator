@@ -9,7 +9,7 @@ public class SemanticAnalysis {
     private ArrayList<String> definedStructure = new ArrayList<>();
     private ArrayList<Node> scope= new ArrayList<>();
     private ArrayList<Node> constantDeclaration = new ArrayList<>();
-
+    private ArrayList<String> variablesInthisScope= new ArrayList<>();
 
     public SemanticAnalysis(Node root) {
         this.root = root;
@@ -36,6 +36,12 @@ public class SemanticAnalysis {
             if(node instanceof ConstantDeclaration || node instanceof GlobalDeclaration){
                 ArrayList<Node> childrenDeclaration = node.children;
                 Type leftDeclaration = (Type) childrenDeclaration.get(0);
+                if(variablesInthisScope.contains(childrenDeclaration.get(1).value)){
+                    throw new SemanticException("Overwrite another variable");
+                }
+                else{
+                    variablesInthisScope.add(childrenDeclaration.get(1).value);
+                }
                 Expression rightDeclaration = (Expression) childrenDeclaration.get(2);
                 String rightDclrt = getType(rightDeclaration);
                 if(rightDeclaration.children.get(0) instanceof ArrayElementAccess){
@@ -66,6 +72,12 @@ public class SemanticAnalysis {
                         }
                     }
                 }
+                if(variablesInthisScope.contains(identifier)){
+                    throw new SemanticException("Overwrite another variable");
+                }
+                else{
+                    variablesInthisScope.add(identifier);
+                }
                 definedStructure.add(identifier);
 
             }else{
@@ -82,21 +94,30 @@ public class SemanticAnalysis {
                     checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
                 }
                 this.scope.add(nodeChildren);
+                ArrayList<String > avant = (ArrayList<String>) this.variablesInthisScope.clone();
+                this.variablesInthisScope.clear();
                 checkStatement(nodeChildren.children.get(2));
                 this.scope.remove(nodeChildren);
+                this.variablesInthisScope.addAll(avant);
             } else if (nodeChildren instanceof WhileStatement) {
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(0));
+                ArrayList<String > avant = (ArrayList<String>) this.variablesInthisScope.clone();
+                this.variablesInthisScope.clear();
                 this.scope.add(nodeChildren);
                 checkStatement(nodeChildren.children.get(1));
                 this.scope.remove(nodeChildren);
+                this.variablesInthisScope.addAll(avant);
             } else if (nodeChildren instanceof ForStatement) {
                 Assignment assignmentFor = (Assignment) nodeChildren.children.get(0);
                 Assignment incrementationFor = (Assignment) nodeChildren.children.get(2);
                 checkAssignmentFor(assignmentFor, incrementationFor);
                 checkTypesConditionStatement((Expression) nodeChildren.children.get(1));
+                ArrayList<String > avant = (ArrayList<String>) this.variablesInthisScope.clone();
+                this.variablesInthisScope.clear();
                 this.scope.add(nodeChildren);
                 checkStatement(nodeChildren.children.get(3));
                 this.scope.remove(nodeChildren);
+                this.variablesInthisScope.addAll(avant);
             } else if (nodeChildren instanceof Free) {
                 Node variableDeclaration = getParent(root, nodeChildren.children.get(0).children.get(0).value);
                 if (variableDeclaration == null) {
@@ -115,6 +136,12 @@ public class SemanticAnalysis {
             } else if (nodeChildren instanceof GlobalDeclaration) {
                 ArrayList<Node> globalNode = nodeChildren.children;
                 Type leftDeclaration = (Type) globalNode.get(0);
+                if(variablesInthisScope.contains(nodeChildren.children.get(1).value)){
+                    throw new SemanticException("Overwrite another variable");
+                }
+                else{
+                    variablesInthisScope.add(nodeChildren.children.get(1).value);
+                }
                 Expression rightDeclaration = (Expression) globalNode.get(2);
                 String rightDclrt = getType(rightDeclaration);
                 isTheSameTypeWithArrayElementAccess(leftDeclaration.children.get(0).value, rightDclrt);
@@ -209,6 +236,12 @@ public class SemanticAnalysis {
                         break;
                     }
                 }
+                if(variablesInthisScope.contains(nodeChildren.children.get(1).children.get(0).value)){
+                    throw new SemanticException("Overwrite another variable");
+                }
+                else{
+                    variablesInthisScope.add(nodeChildren.children.get(1).children.get(0).value);
+                }
                 if (!isABaseType) {
                     String strucName = nodeChildren.children.get(0).children.get(0).value;
                     String typeStructDeclaration = isTheStrucDefined(root, strucName, null);
@@ -219,6 +252,8 @@ public class SemanticAnalysis {
                 }
 
             } else if (nodeChildren instanceof Method) {
+                ArrayList<String > avant = (ArrayList<String>) this.variablesInthisScope.clone();
+                this.variablesInthisScope.clear();
                 this.scope.add(nodeChildren);
                 String nameMethod = nodeChildren.children.get(0).children.get(0).value;
                 String returnType = nodeChildren.children.get(1).children.get(0).value;
@@ -235,6 +270,7 @@ public class SemanticAnalysis {
                     }
                 }
                 this.scope.remove(nodeChildren);
+                this.variablesInthisScope.addAll(avant);
             } else if (nodeChildren instanceof FunctionCall) {
                 String nameFunctionCall = nodeChildren.children.get(0).value;
                 String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln", "len", "chr", "len", "floor"};
@@ -749,6 +785,8 @@ public class SemanticAnalysis {
     void isTheSameTypeWithArrayElementAccess(String left, String right) throws SemanticException {
 
         if(!right.contains(left)){
+            System.out.println(left);
+            System.out.println(right);
             throw new SemanticException("TypeError");
         }
     }

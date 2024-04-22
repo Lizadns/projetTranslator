@@ -523,6 +523,23 @@ public class TestSA {
         assertEquals(0, answer);
     }
     @Test
+    public void testOverwrite2() throws IOException, SemanticException {
+        String input = "int a;" +
+                "bool c=true;" +
+                "for(a=0,a<3,a=a+1){" + "bool b = true;"+ "int b;"+"bool c=b;"+
+                "}";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        PrintAST p = new PrintAST(program);
+        p.print();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("Overwrite another variable");
+        int answer = sa.analyzeNode(program);
+    }
+    @Test
     public void testString() throws IOException, SemanticException {
         String input = "string[] stringArray = string[2];\n" +
                 "int a = stringArray[1][2+3];";
