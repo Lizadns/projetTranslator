@@ -455,6 +455,7 @@ public class SemanticAnalysis {
             }
             String attributName = node.children.get(2).value;  //attribute
             Node variableDeclaration = getParent(root, arrayName); // on verifie que array est bien déclaré
+            Node v = checkScope(this.scope,node, node.children.get(0).value);
             String structName = variableDeclaration.children.get(0).children.get(0).value; //Point[]
                 //est ce que la struct Point a bien un attribut x, c'est le leftType
                 //1.trouver la structure Point
@@ -482,6 +483,7 @@ public class SemanticAnalysis {
         else if(node instanceof StructFieldAccess){ // .... = p.x
             String nameStructVariable = node.children.get(0).value; //p
             Node variableDeclaration = getParent(root, nameStructVariable); // on verifie que p est bien déclaré
+            Node v = checkScope(this.scope,node, node.children.get(0).value);
             String structName = variableDeclaration.children.get(0).children.get(0).value; //Point
             String nameStructField = node.children.get(1).value; //x
             String type = isTheStrucDefined(root, structName, nameStructField);
@@ -491,6 +493,10 @@ public class SemanticAnalysis {
             Node parent = getParent(root, node.children.get(0).value);
             if(parent==null){
                 throw new SemanticException("No Declaration Variable");
+            }
+            Node v = checkScope(this.scope,node, node.children.get(0).value);
+            if(v==null){
+                throw new SemanticException("ScopeError");
             }
             String typeDeclaration = parent.children.get(0).children.get(0).value;
             return typeDeclaration;
