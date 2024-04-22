@@ -322,8 +322,8 @@ public class TestSA {
         PrintAST p= new PrintAST(program);
         p.print();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        String answer = sa.analyzeNode(program);
-        assertEquals("Everything is OK!", answer);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
     }
 
 
