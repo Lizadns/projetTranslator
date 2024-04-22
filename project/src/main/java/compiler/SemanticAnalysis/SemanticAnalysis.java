@@ -594,7 +594,7 @@ public class SemanticAnalysis {
             String typeExpression1 = getType((Expression) node.children.get(1));
             String typeExpression2 = getType((Expression) node.children.get(2));
             if(!typeExpression2.equals("int")||!typeExpression1.equals("int")){
-                throw new SemanticException("Index not an int");
+                throw new SemanticException("TypeError");
             }
             return "int";
         }
