@@ -8,7 +8,7 @@ public class SemanticAnalysis {
     private Node root;
     private ArrayList<String> definedStructure = new ArrayList<>();
     private ArrayList<Node> scope= new ArrayList<>();
-    private ArrayList<String> constantDeclaration = new ArrayList<>();
+    private ArrayList<Node> constantDeclaration = new ArrayList<>();
 
 
     public SemanticAnalysis(Node root) {
@@ -45,7 +45,7 @@ public class SemanticAnalysis {
                     isTheSameType(leftDeclaration.children.get(0).value,rightDclrt);
                 }
                 if(node instanceof ConstantDeclaration){
-                    constantDeclaration.add(childrenDeclaration.get(1).value);
+                    constantDeclaration.add(node);
                 }
             // struct cannot overwrite existing types
             }else if(node instanceof StructDeclaration){
@@ -121,9 +121,6 @@ public class SemanticAnalysis {
             } else if (nodeChildren instanceof Assignment) {
                 ArrayList<Node> assignmentChildren = nodeChildren.children;
                 if (assignmentChildren.get(0) instanceof Variable) { // a = expression
-                    if(constantDeclaration.contains(assignmentChildren.get(0).children.get(0).value)){
-                        throw new SemanticException("Modification of a constant value");
-                    }
                     Node variableDeclaration = getParent(root, assignmentChildren.get(0).children.get(0).value);
                     if (variableDeclaration == null) {
                         throw new SemanticException("No declaration of the variable ");
@@ -135,6 +132,9 @@ public class SemanticAnalysis {
                     }
                     else{
                         typeVariable=v.children.get(0).children.get(0).value;
+                        if (constantDeclaration.contains(v)){
+                            throw new SemanticException("Modification of a constant value");
+                        }
                     }
                     String typeExpression = getType((Expression) nodeChildren.children.get(1));
                     isTheSameType(typeVariable, typeExpression);
@@ -811,7 +811,6 @@ public class SemanticAnalysis {
 
 
     private String isTheStrucDefined(Node node, String nameStruct, String nameStructField) throws SemanticException {
-        System.out.println(nameStruct);
         if (node == null) {
             throw new SemanticException("StructError");
         }
