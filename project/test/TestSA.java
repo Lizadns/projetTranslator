@@ -16,7 +16,115 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class TestSA {
+    @Test
+    public void testTypeError1() throws IOException, SemanticException {
+        String input = "int leftSide;" +
+                "float rightSide = 3.5;" +
+                "leftSide = rightSide;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("TypeError");
+        sa.analyzeNode(program);
+    }
 
+    @Test
+    public void testStructError1() throws IOException, SemanticException {
+        String input = "struct int{" +
+                "int large;}";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("StructError");
+        sa.analyzeNode(program);
+    }
+
+    @Test
+    public void testOperatorError1() throws IOException, SemanticException {
+        String input = "int a = 6;" +
+                "bool boolean = true;" +
+                "int b = a + boolean;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("OperatorError");
+        sa.analyzeNode(program);
+    }
+
+    @Test
+    public void testArgumentError1() throws IOException, SemanticException {
+        String input = "def int argumentError1(int argument){" +
+                "return argument + 1;" +
+                "}" +
+                "float b = 3.5;" +
+                "argumentError1(b);";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("ArgumentError");
+        sa.analyzeNode(program);
+    }
+
+    @Test
+    public void testMissingConditionError1() throws IOException, SemanticException {
+        String input = "int a = 2;" +
+                "if(a){" +
+                "a=a+1;}";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("MissingConditionError");
+        sa.analyzeNode(program);
+    }
+
+    @Test
+    public void testReturnError1() throws IOException, SemanticException {
+        String input = "def int argumentError1(int argument){" +
+                "bool boolean = true;" +
+                "return boolean;" +
+                "}";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("ReturnError");
+        sa.analyzeNode(program);
+    }
+
+    @Test
+    public void testScopeError1() throws IOException, SemanticException {
+        String input = "def int argumentError1(int argument){" +
+                "bool boolean = true;" +
+                "int a = 6;" +
+                "return a + 1;" +
+                "}" +
+                "boolean = false;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("ScopeError");
+        sa.analyzeNode(program);
+    }
     @Test
     public void testConstantDeclarationLiteral() throws IOException, SemanticException {
         String input = "final int a = 3;";
@@ -128,8 +236,7 @@ public class TestSA {
                 "if(a >= 5){" +
                 "if(b<2){" +
                 "int c;"+
-                "}}" +
-                "c = 5;";
+                "}}" ;
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
@@ -336,25 +443,6 @@ public class TestSA {
         int answer = sa.analyzeNode(program);
         assertEquals(0, answer);
     }
-
-    @Test
-    public void testScopeTest() throws IOException, SemanticException {
-        String input = " " +
-                "def int blabla(int b){" +
-                "int a = 6;" +
-                "b=b+1;" +
-                "return b;}" +
-                "blabla(a);";
-        StringReader reader = new StringReader(input);
-        Lexer lexer = new Lexer(reader);
-        Parser parser = new Parser(lexer);
-        Program program = parser.getAST();
-        SemanticAnalysis sa = new SemanticAnalysis(program);
-        int answer = sa.analyzeNode(program);
-        assertEquals(0, answer);
-    }
-
-
 
 
 
