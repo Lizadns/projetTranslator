@@ -522,4 +522,18 @@ public class TestSA {
         int answer = sa.analyzeNode(program);
         assertEquals(0, answer);
     }
+    @Test
+    public void testString() throws IOException, SemanticException {
+        String input = "string testString = \"hello\";" +
+                "int x = testString[3];";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        PrintAST p= new PrintAST(program);
+        p.print();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
+    }
 }
