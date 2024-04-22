@@ -64,11 +64,22 @@ public class TestSA {
         Parser parser = new Parser(lexer);
         Program program = parser.getAST();
         SemanticAnalysis sa = new SemanticAnalysis(program);
-        // Spécifie que l'exception SemanticException est attendue
         exceptionRule.expect(SemanticException.class);
-        // Spécifie que le message de l'exception doit contenir "TypeError"
         exceptionRule.expectMessage("OperatorError");
-        // Exécute la méthode qui doit lever l'exception
+        sa.analyzeNode(program);
+    }
+
+    @Test
+    public void testFindReturnTypeFunctionCallFalse2() throws IOException, SemanticException {
+        String input = "def float add(float a, float b) { if(b>2.0){return a + b;} }\n" +
+                "int b = add(2.3,3.5);";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("TypeError");
         sa.analyzeNode(program);
     }
     @Test
@@ -321,6 +332,23 @@ public class TestSA {
         Program program = parser.getAST();
         PrintAST p= new PrintAST(program);
         p.print();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        int answer = sa.analyzeNode(program);
+        assertEquals(0, answer);
+    }
+
+    @Test
+    public void testScopeTest() throws IOException, SemanticException {
+        String input = " " +
+                "def int blabla(int b){" +
+                "int a = 6;" +
+                "b=b+1;" +
+                "return b;}" +
+                "blabla(a);";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
         SemanticAnalysis sa = new SemanticAnalysis(program);
         int answer = sa.analyzeNode(program);
         assertEquals(0, answer);
