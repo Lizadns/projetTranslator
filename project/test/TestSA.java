@@ -360,6 +360,21 @@ public class TestSA {
         exceptionRule.expectMessage("ArgumentError");
         sa.analyzeNode(program);
     }
+    @Test
+    public void testBuiltIn3() throws IOException, SemanticException {
+        String input = "float conditions = 1.0;" +
+                "writeInt(conditions);";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        PrintAST p = new PrintAST(program);
+        p.print();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("ArgumentError");
+        sa.analyzeNode(program);
+    }
 
     @Test
     public void testFor() throws IOException, SemanticException {
@@ -454,6 +469,23 @@ public class TestSA {
         SemanticAnalysis sa = new SemanticAnalysis(program);
         int answer = sa.analyzeNode(program);
         assertEquals(0, answer);
+    }
+    @Test
+    public void testfree2() throws IOException, SemanticException {
+        String input = "struct Point{" +
+                "int long;}" +
+                "int a=3;" +
+                "free a;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        PrintAST p = new PrintAST(program);
+        p.print();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("free array or struct");
+        sa.analyzeNode(program);
     }
 
     @Test
@@ -552,6 +584,36 @@ public class TestSA {
         SemanticAnalysis sa = new SemanticAnalysis(program);
         int answer = sa.analyzeNode(program);
         assertEquals(0, answer);
+    }
+
+    @Test
+    public void testString2() throws IOException, SemanticException {
+        String input = "int[] stringArray = int[2];\n" +
+                "int a = stringArray[1][2+3];";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        PrintAST p= new PrintAST(program);
+        p.print();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("Use of a array of 2 dimension for a non-string basetype");
+        int answer = sa.analyzeNode(program);
+    }
+    @Test
+    public void testIndex() throws IOException, SemanticException {
+        String input = "int[] a = int[3];\n"+"a[true]=2;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        Program program = parser.getAST();
+        PrintAST p= new PrintAST(program);
+        p.print();
+        SemanticAnalysis sa = new SemanticAnalysis(program);
+        exceptionRule.expect(SemanticException.class);
+        exceptionRule.expectMessage("TypeError");
+        int answer = sa.analyzeNode(program);
     }
 
 }
