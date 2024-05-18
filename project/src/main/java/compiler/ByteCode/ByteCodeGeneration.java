@@ -3,13 +3,36 @@ import compiler.Parser.*;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
+
+
 
 public class ByteCodeGeneration {
 
+    private ClassWriter cw;
+    private String className;
+
+    private void compile(){
 
 
-    private Object root (Program node){
-        return null;
+    }
+
+    private byte[] root (Program node){
+        cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        cw.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, className, null, "java/lang/Object", null);
+
+        for (Node n :node.children) {
+            if(n instanceof Declaration){
+                declaration((Declaration) n);
+            }
+            else{
+                Stmt((Statement) n);
+            }
+        }
+
+        cw.visitEnd();
+        return cw.toByteArray();
     }
 
     private Object funcDecl (Method node){
