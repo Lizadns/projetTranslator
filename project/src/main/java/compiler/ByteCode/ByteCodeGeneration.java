@@ -6,11 +6,15 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 
+import java.util.ArrayList;
+
+import static jdk.internal.org.objectweb.asm.Opcodes.IFNE;
 
 
 public class ByteCodeGeneration {
 
     private ClassWriter cw;
+    private MethodVisitor method;
     private String className;
 
     private void compile(){
@@ -86,10 +90,22 @@ public class ByteCodeGeneration {
 //_____________________________________________________________________________________________
 
     private Object Stmt(Statement node){
+        ArrayList<Node> StatementNodes = node.children;
+        for (Node nodeChildren : StatementNodes){
+
+        }
         return null;
     }
     private Object ifStmt (IfStatement node)
     {
+        //checker la condition
+        expressionStmt((Expression) node.children.get(1));
+        MethodVisitor mv = method;
+
+        Label trueLabel = new Label();
+        mv.visitJumpInsn(IFNE, trueLabel);
+
+        Label falseLabel = new Label();
         return null;
     }
 
