@@ -14,7 +14,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.IFNE;
 public class ByteCodeGeneration {
 
     private ClassWriter cw;
-    private MethodVisitor method;
+    private MethodVisitor mv;
     private String className;
 
     private void compile(){
