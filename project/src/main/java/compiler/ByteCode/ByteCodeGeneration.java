@@ -25,10 +25,13 @@ public class ByteCodeGeneration {
     private int variableCounter = 0;
     private boolean topLevel;
     private HashMap<String, Pair<Integer,org.objectweb.asm.Type>> variables = new HashMap<>();
+    private HashMap<String, String> classVariable = new HashMap<>();
+
+    private ClassWriter struct;
+    ArrayList<Pair<String, ClassWriter>> structs = new ArrayList<>();
     private String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln","len","floor","chr"};
 
     private void compile(){
-
 
     }
 
@@ -497,62 +500,75 @@ public class ByteCodeGeneration {
 
             }else if (nodeChildren instanceof Free) {
                 free((Free) nodeChildren);
+
+            }else if(nodeChildren instanceof Method){
+                funcDecl((Method) nodeChildren);
+
+            }else if (nodeChildren instanceof FunctionCall){
+                funCall((FunctionCall) nodeChildren);
+
+            }else if(nodeChildren instanceof Assignment){
+                assignment((Assignment) nodeChildren);
+
+            }else if(nodeChildren instanceof GlobalDeclaration){
+                globalDeclaration((GlobalDeclaration) nodeChildren);
+
+            }else if (nodeChildren instanceof VariableDeclaration){
+                varDecl((VariableDeclaration) nodeChildren);
             }
         }
         return null;
     }
 
     private Object ifStmt(IfStatement node) {
-        MethodVisitor mvs = mv;
+
         Label endIfLabel = new Label();
         Label endElseLabel = new Label();
 
         if(node.children.get(0).equals("if")){//c'est le if
             expressionStmt((Expression) node.children.get(1));
-            mvs.visitJumpInsn(IFEQ, endIfLabel);//si condition false, va à la fin du if
+            mv.visitJumpInsn(IFEQ, endIfLabel);//si condition false, va à la fin du if
             block((BlockInstruction) node.children.get(2));
-            mvs.visitLabel(endIfLabel);
+            mv.visitLabel(endIfLabel);
 
         }else{//c'est le else
-            mvs.visitJumpInsn(IFNE , endElseLabel); //si la condtion est vrai et qu'il y a un else, va à la fin du else
+            mv.visitJumpInsn(IFNE , endElseLabel); //si la condtion est vrai et qu'il y a un else, va à la fin du else
             block((BlockInstruction) node.children.get(2));
-            mvs.visitLabel(endElseLabel);
+            mv.visitLabel(endElseLabel);
 
         }
-        mv = mvs;
+
         return null;
     }
 
     private Object whileStmt(WhileStatement node)
     {
-        MethodVisitor mvs = mv;
+
         Label startLabel = new Label();
         Label endLabel = new Label();
 
-        mvs.visitLabel(startLabel); //ici c le start
+        mv.visitLabel(startLabel); //ici c le start
         expressionStmt((Expression) node.children.get(0));
-        mvs.visitJumpInsn(IFEQ,endLabel); //si condition fausse, saute à la fin du while
+        mv.visitJumpInsn(IFEQ,endLabel); //si condition fausse, saute à la fin du while
         block((BlockInstruction) node.children.get(1));
-        mvs.visitJumpInsn(GOTO,startLabel);  //fin du block donc retourne au début de la boucle
-        mvs.visitLabel(endLabel);    //marque la fin de la boucle
+        mv.visitJumpInsn(GOTO,startLabel);  //fin du block donc retourne au début de la boucle
+        mv.visitLabel(endLabel);    //marque la fin de la boucle
 
-        mv =mvs;
         return null;
     }
 
     private Object forStmt(ForStatement node){
-        MethodVisitor mvs = mv;
+
         Label startFor = new Label();
         Label endFor = new Label();
 
-        mvs.visitLabel(startFor);
+        mv.visitLabel(startFor);
         expressionStmt((Expression) node.children.get(1));
-        mvs.visitJumpInsn(IFEQ,endFor);
+        mv.visitJumpInsn(IFEQ,endFor);
         block((BlockInstruction) node.children.get(3));
-        mvs.visitJumpInsn(GOTO,startFor);  //fin du block donc retourne au début de la boucle
-        mvs.visitLabel(endFor);
+        mv.visitJumpInsn(GOTO,startFor);  //fin du block donc retourne au début de la boucle
+        mv.visitLabel(endFor);
 
-        mv=mvs;
         return null;
     }
     private Object declaration(Declaration node){
@@ -579,17 +595,37 @@ public class ByteCodeGeneration {
         variables.put(name,new Pair<>(index, type));
         return index;
     }
+
     private Object varDecl (VariableDeclaration node)
     {
         String typeVariable = node.children.get(0).value;
-        org.objectweb.asm.Type type = org.objectweb.asm.Type.getType(node.children.get(0).value);
+        org.objectweb.asm.Type type = org.objectweb.asm.Type.getType(getASMType(node.children.get(0).value));
         registerVariable(node.children.get(1).value, type);
         return null;
     }
     private Object constantDeclaration (ConstantDeclaration node){
+        String name = node.children.get(1).value;
+        String type = node.children.get(0).children.get(0).value;
+        expressionStmt((Expression) node.children.get(2));
+        mv.visitFieldInsn(Opcodes.PUTSTATIC , "main", name, getASMType(type));//sais pas si la class est ok
+        classVariable.put(name,getASMType(type));//pour savoir que cette variable est une constante
+
         return null;
     }
     private Object globalDeclaration(GlobalDeclaration node){
+        String name = node.children.get(1).value;
+        String type = node.children.get(0).children.get(0).value;
+        expressionStmt((Expression) node.children.get(2));
+        if (topLevel){//si variable de classe
+            mv.visitFieldInsn(Opcodes.PUTSTATIC , "main", name, getASMType(type));//sais pas si la class est ok
+            classVariable.put(name,getASMType(type));//pour savoir que cette variable est une instance de classe
+        }
+        else{//si variable locale
+            org.objectweb.asm.Type typeASM = org.objectweb.asm.Type.getType(getASMType(type));
+            int index = registerVariable(node.children.get(1).value, typeASM);
+            mv.visitVarInsn(typeASM.getOpcode(ISTORE), index);
+            variables.put(name, new Pair<>(index,typeASM));
+        }
 
         return null;
     }
@@ -597,7 +633,9 @@ public class ByteCodeGeneration {
     private Object newArray(NewArray node){
         return null;
     }
+
     private Object parameter (Param node) {
+        registerVariable(node.children.get(1).value,org.objectweb.asm.Type.getType(getASMType(node.children.get(0).children.get(0).value)));
         return null;
     }
 
@@ -608,39 +646,150 @@ public class ByteCodeGeneration {
     public Object assignment (Assignment node)
     {
         Node left = node.children.get(0);
+
         if(left instanceof Variable){
-            expressionStmt((Expression) node.children.get(0));
-            Pair p = variables.get(left.children.get(0).value);
-            org.objectweb.asm.Type type = (org.objectweb.asm.Type) p.getValue();
-            int index = (int) p.getKey();
-            //convertir les 2 types ???
-            mv.visitVarInsn(type.getOpcode(ISTORE), index);
+            if(variables.containsKey(left.children.get(0).value)){//si variable locale
+                expressionStmt((Expression) node.children.get(1));
+                Pair p = variables.get(left.children.get(0).value);
+                org.objectweb.asm.Type type = (org.objectweb.asm.Type) p.getValue();
+                int index = (int) p.getKey();
+                //convertir les 2 types ???
+                mv.visitVarInsn(type.getOpcode(ISTORE), index);
+            }else {//variable globale
+                // Accéder à la variable globale et la charger sur la pile
+                String type = classVariable.get(left.children.get(0).value);
+                mv.visitFieldInsn(Opcodes.GETSTATIC, "main",left.children.get(0).value,type);
+                expressionStmt((Expression) node.children.get(1));
+                mv.visitInsn(Opcodes.IADD); //ajoute la valeur à la variable
+                mv.visitFieldInsn(Opcodes.PUTSTATIC, "main",left.children.get(0).value , type);//remet à jour la variablede classe sur la heap
+            }
+
 
         }else if (left instanceof StructFieldAccess){
+            //fieldAccess((StructFieldAccess) left);
 
         }else if(left instanceof ArrayElementAccess){
+            /*
+            if(variables.containsKey(left.children.get(0).value)){
+                arrayAccess((ArrayElementAccess) left);
+                expressionStmt((Expression) left.children.get(1));
+                mv.visitInsn(L2I);
+                expressionStmt((Expression) node.children.get(1));
+                Pair type = variables.get(left.children.get(0).value);
+                dup_x2((String) type.getValue());
+                mv.visitInsn(nodeAsmType(node).getOpcode(IASTORE); //nodeAsmType(node) ?
+            }
+             */
 
         }
 
         return null;
     }
 
+    private void dup_x1 (String type) {
+        if (type.equals("float") || type.equals("int"))
+            mv.visitInsn(DUP2_X1);
+        else
+            mv.visitInsn(DUP_X1);
+    }
+
+    private void dup_x2 (String type) {
+        if (type.equals("float") || type.equals("int"))
+            mv.visitInsn(DUP2_X2);
+        else
+            mv.visitInsn(DUP_X2);
+    }
+
+    private String implicitConversion (String left, String right) {//convertir le droit int en float si gauche est un float
+        if (left.equals("float") && right.equals("int")) {
+            mv.visitInsn(L2D);
+            return left;
+        }
+        return right;
+    }
+
     private Object structDecl (StructDeclaration node)
     {
+        String binaryName = node.children.get(0).value;
+        struct = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        struct.visit(V1_8, ACC_PUBLIC, binaryName, null, "java/lang/Object", null);
+
+        for (int i = 1; i < node.children.size(); i++) {
+            StructField field = (StructField) node.children.get(i);
+            fieldDecl(field);
+        }
+        // Générer le constructeur
+        org.objectweb.asm.Type[] paramTypes = node.children.stream()
+                .skip(1)  // Skip the first element
+                .map(child -> (StructField) child)
+                .map(field -> org.objectweb.asm.Type.getType(getASMType(field.children.get(0).children.get(0).value)))
+                .toArray(org.objectweb.asm.Type[]::new);
+        String descriptor = Type.getMethodDescriptor(org.objectweb.asm.Type.VOID_TYPE, paramTypes);
+
+        MethodVisitor init = struct.visitMethod(Opcodes.ACC_PUBLIC, "<init>", descriptor, null, null);
+        init.visitCode();
+        init.visitVarInsn(Opcodes.ALOAD, 0); // this
+        init.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+
+        int index = 1;
+        for (int i = 1; i < node.children.size(); i++) {
+            StructField field = (StructField) node.children.get(i);
+            init.visitVarInsn(Opcodes.ALOAD, 0);
+            org.objectweb.asm.Type type = Type.getType(getASMType(field.children.get(0).children.get(0).value));
+            init.visitVarInsn(type.getOpcode(Opcodes.ILOAD), index);
+            index += type.getSize();
+            init.visitFieldInsn(Opcodes.PUTFIELD, binaryName, field.children.get(1).value, type.getDescriptor());
+        }
+
+        init.visitInsn(Opcodes.RETURN);
+        init.visitMaxs(-1, -1);
+        init.visitEnd();
+
+        struct.visitEnd();
+        structs.add(new Pair<>(binaryName, struct));
+        struct = null;
         return null;
     }
 
     private Object fieldDecl (StructField node)
     {
+        struct.visitField(ACC_PUBLIC, node.children.get(1).value, getASMType(node.children.get(0).children.get(0).value), null, null);
         return null;
     }
 
     private Object fieldAccess (StructFieldAccess node) {
+        //run(node.stem); c'est une expression mais je comprends pas
+        // je ne sais pas comment retrouver le nom de la structure (binaryName) et le type du field (nodeFieldDescriptor)
+
+        //mv.visitFieldInsn(GETFIELD, binaryName, node.children.get(1).value, nodeFieldDescriptor(node));
         return null;
     }
 
     private Object charAccessInStringArray(CharAccessInStringArray node){
         return null;
+    }
+
+    private String getASMType(String type){//jsp comment faire si le type c'est une structure
+        switch (type){
+            case "int":
+                return "I";
+            case "bool":
+                return "Z";
+            case "string":
+                return "Ljava/lang/String;";
+            case "float":
+                return "F";
+            case "int[]":
+                return "[I";
+            case "bool[]":
+                return "[Z";
+            case "string[]":
+                return "[Ljava/lang/String;";
+            case "float[]":
+                return "[F";
+            default:
+                throw new IllegalArgumentException("Type non supporté: " + type);
+        }
     }
 
 
