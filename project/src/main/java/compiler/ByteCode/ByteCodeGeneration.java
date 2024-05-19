@@ -427,13 +427,18 @@ public class ByteCodeGeneration {
             //fieldAccess((StructFieldAccess) left);
 
         }else if(left instanceof ArrayElementAccess){
-            arrayAccess((ArrayElementAccess) left);
-            expressionStmt((Expression) left.children.get(1));
-            mv.visitInsn(L2I);
-            expressionStmt((Expression) node.children.get(1));
-            //Comment avoir le type ?
-            //dup_x2(type);
-            //mv.visitInsn(nodeAsmType(node).getOpcode(IASTORE); //comment avoir le type?
+            /*
+            if(variables.containsKey(left.children.get(0).value)){
+                arrayAccess((ArrayElementAccess) left);
+                expressionStmt((Expression) left.children.get(1));
+                mv.visitInsn(L2I);
+                expressionStmt((Expression) node.children.get(1));
+                Pair type = variables.get(left.children.get(0).value);
+                dup_x2((String) type.getValue());
+                mv.visitInsn(nodeAsmType(node).getOpcode(IASTORE); //nodeAsmType(node) ?
+            }
+             */
+
         }
 
         return null;
