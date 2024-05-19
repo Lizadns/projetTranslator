@@ -427,7 +427,13 @@ public class ByteCodeGeneration {
             //fieldAccess((StructFieldAccess) left);
 
         }else if(left instanceof ArrayElementAccess){
-            //arrayAccess((ArrayElementAccess) left);
+            arrayAccess((ArrayElementAccess) left);
+            expressionStmt((Expression) left.children.get(1));
+            mv.visitInsn(L2I);
+            expressionStmt((Expression) node.children.get(1));
+            //Comment avoir le type ?
+            //dup_x2(type);
+            //mv.visitInsn(nodeAsmType(node).getOpcode(IASTORE); //comment avoir le type?
         }
 
         return null;
@@ -438,6 +444,13 @@ public class ByteCodeGeneration {
             mv.visitInsn(DUP2_X1);
         else
             mv.visitInsn(DUP_X1);
+    }
+
+    private void dup_x2 (String type) {
+        if (type.equals("float") || type.equals("int"))
+            mv.visitInsn(DUP2_X2);
+        else
+            mv.visitInsn(DUP_X2);
     }
 
     private String implicitConversion (String left, String right) {//convertir le droit int en float si gauche est un float
