@@ -1,5 +1,6 @@
 package compiler.ByteCode;
 import compiler.Parser.*;
+import compiler.SemanticAnalysis.SemanticException;
 import javafx.util.Pair;
 import jdk.nashorn.internal.runtime.Scope;
 import org.objectweb.asm.ClassWriter;
@@ -24,6 +25,7 @@ public class ByteCodeGeneration {
     private int variableCounter = 0;
     private boolean topLevel;
     private HashMap<String, Pair<Integer,org.objectweb.asm.Type>> variables = new HashMap<>();
+    private String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln","len","floor","chr"};
 
     private void compile(){
 
@@ -52,7 +54,12 @@ public class ByteCodeGeneration {
     }
 
     private Object funcDecl (Method node){
+        int surroundingVariableCounter = variableCounter;
         MethodVisitor surroundingMethod = mv;
+        boolean surrondingIsTopLevel = topLevel;
+        variableCounter=0;
+        topLevel= false;
+
         for(Node n : node.children){
             if(n instanceof Param){
                 parameter((Param)n);
@@ -69,7 +76,49 @@ public class ByteCodeGeneration {
         mv.visitEnd();
         mv.visitMaxs(-1, -1);
         mv= surroundingMethod;
+        variableCounter= surroundingVariableCounter;
+        topLevel= surrondingIsTopLevel;
         return null;
+    }
+
+    private String getDescriptor(Method node) {
+        StringBuilder descriptor = new StringBuilder();
+        descriptor.append("(");
+
+        for (Node child : node.children) {
+            if (child instanceof Param) {
+                Param p = (Param) child;
+                descriptor.append(getTypeDescriptor(p.children.get(0).children.get(0).value));
+            }
+        }
+
+        descriptor.append(")");
+
+        descriptor.append(getTypeDescriptor(node.children.get(1).children.get(0).value));
+
+        return descriptor.toString();
+    }
+
+    private String getTypeDescriptor(String type) {
+        switch (type) {
+            case "int":
+                return "I";
+            case "bool":
+                return "Z";
+            case "float":
+                return "F";
+            case "void":
+                return "V";
+            case "string":
+                return "Ljava/lang/String;";
+            default:
+                // if arrays
+                if (type.endsWith("[]")) {
+                    return "[" + getTypeDescriptor(type.substring(0, type.length() - 2));
+                }
+                // if other type like a structure that is in another class
+                return "L" + type.replace('.', '/') + ";";
+        }
     }
 
     private Object argument(Argument node){
@@ -81,46 +130,38 @@ public class ByteCodeGeneration {
         if (isShortCircuit((BinaryOperator) node.children.get(1)))
             return shortCircuit(node);
         expressionStmt((Expression) node.children.get(0));
-        // promote int to double for mixed operations
-        if (enablesPromotion(node.operator) && left instanceof IntType && right instanceof FloatType)
-            mv.visitInsn(Opcodes.I2D);
+        // promote int to float for mixed operations
+        Type left = null;
+        Type right = null; // initialiser
+
 
         expressionStmt((Expression) node.children.get(2));
         switch (node.children.get(1).children.get(0).value) {
             case "+":
-                if (left instanceof StringType) {
-                    convertToString(right);
-                    invokeStatic(method, SighRuntime.class, "concat", String.class, String.class);
-                } else if (right instanceof StringType) {
-                    // left already converted to string in this case
-                    invokeStatic(method, SighRuntime.class, "concat", String.class, String.class);
+                if (getType(node.children.get(0)).equal("string")) { //voir si left == string
+                    mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
                 } else {
-                    numOperation(Opcodes.IADD, Opcodes.DADD, left, right);
+                    numOperation(Opcodes.IADD, Opcodes.FADD, left, right);
                 } break;
 
-            case "*":  numOperation(Opcodes.IMUL, Opcodes.DMUL, left, right); break;
-            case "/":    numOperation(Opcodes.IDIV, Opcodes.DDIV, left, right); break;
-            case "%": numOperation(Opcodes.IREM, Opcodes.DREM, left, right); break;
-            case "-":  numOperation(Opcodes.ISUB, Opcodes.DSUB, left, right); break;
+            case "*":  numOperation(Opcodes.IMUL, Opcodes.FMUL, left, right); break;
+            case "/":    numOperation(Opcodes.IDIV, Opcodes.FDIV, left, right); break;
+            case "%": numOperation(Opcodes.IREM, Opcodes.IREM, left, right); break;
+            case "-":  numOperation(Opcodes.ISUB, Opcodes.FSUB, left, right); break;
 
             case "==":
-                comparison(node.operator, Opcodes.IFEQ, Opcodes.IF_ICMPEQ, Opcodes.IF_ACMPEQ, left, right); break;
+                comparison((BinaryOperator) node.children.get(1), Opcodes.IFEQ, Opcodes.IF_ICMPEQ, Opcodes.IF_ACMPEQ, left, right); break;
             case "!=":
-                comparison(node.operator, Opcodes.IFNE, Opcodes.IF_ICMPNE, Opcodes.IF_ACMPNE, left, right); break;
+                comparison((BinaryOperator) node.children.get(1), Opcodes.IFNE, Opcodes.IF_ICMPNE, Opcodes.IF_ACMPNE, left, right); break;
             case ">":
-                comparison(node.operator, Opcodes.IFGT, -1, -1, left, right); break;
+                comparison((BinaryOperator)node.children.get(1), Opcodes.IFGT, -1, -1, left, right); break;
             case "<":
-                comparison(node.operator, Opcodes.IFLT, -1, -1, left, right); break;
+                comparison((BinaryOperator)node.children.get(1), Opcodes.IFLT, -1, -1, left, right); break;
             case ">=":
-                comparison(node.operator, Opcodes.IFGE, -1, -1, left, right); break;
+                comparison((BinaryOperator) node.children.get(1), Opcodes.IFGE, -1, -1, left, right); break;
             case "<=":
-                comparison(node.operator, Opcodes.IFLE, -1, -1, left, right); break;
+                comparison((BinaryOperator) node.children.get(1), Opcodes.IFLE, -1, -1, left, right); break;
         }
-        return null;
-    }
-    private Object binaryOperator (BinaryOperator node)
-    {
-
         return null;
     }
 
@@ -137,18 +178,54 @@ public class ByteCodeGeneration {
         return null;
     }
 
-    private void numOperation(int longOpcode, int doubleOpcode, Type left, Type right)
+    private void comparison (BinaryOperator op, int doubleWidthOpcode, int boolOpcode, int objOpcode,  Type left, Type right) {
+        int l = left.getSort();
+        int r = right.getSort();
+        Label trueLabel = new Label();
+        Label endLabel = new Label();
+
+        if (l== Type.INT && r == Type.INT) {
+            mv.visitInsn(LCMP);
+            mv.visitJumpInsn(doubleWidthOpcode, trueLabel);
+        } else if ((l == Type.FLOAT || l== Type.INT) && r == Type.FLOAT) {
+            // If left is an Int, we've added a L2D instruction before the long operand beforehand
+            // Proper NaN handling: if NaN is involved, has to be false for all operations.
+            int opcode = op.children.get(0).value.equals("<") || op.children.get(0).value.equals("<=")  ? DCMPG : DCMPL;
+            mv.visitInsn(opcode);
+            mv.visitJumpInsn(doubleWidthOpcode, trueLabel);
+        } else if (l == Type.FLOAT && r == Type.INT) {
+            mv.visitInsn(L2D);
+            // Proper NaN handling: if NaN is involved, has to be false for all operations.
+            int opcode = op.children.get(0).value.equals("<") || op.children.get(0).value.equals("<=")  ? DCMPG : DCMPL;
+            mv.visitInsn(opcode);
+            mv.visitJumpInsn(doubleWidthOpcode, trueLabel);
+        } else if (l == Type.BOOLEAN && r == Type.BOOLEAN) {
+            mv.visitJumpInsn(boolOpcode, trueLabel);
+        } else {
+            mv.visitJumpInsn(objOpcode, trueLabel);
+        }
+
+        mv.visitInsn(ICONST_0);
+        mv.visitJumpInsn(GOTO, endLabel);
+        mv.visitLabel(trueLabel);
+        mv.visitInsn(ICONST_1);
+        mv.visitLabel(endLabel);
+    }
+
+    private void numOperation(int intOpcode, int floatOpcode, Type left, Type right)
     {
-        if (left instanceof IntType && right instanceof IntType) {
-            mv.visitInsn(longOpcode);
-        } else if (left instanceof FloatType && right instanceof FloatType) {
-            mv.visitInsn(doubleOpcode);
-        } else if (left instanceof FloatType && right instanceof IntType) {
+        int l = left.getSort();
+        int r = right.getSort();
+        if (l== Type.INT && r == Type.INT) {
+            mv.visitInsn(intOpcode);
+        } else if (l == Type.FLOAT && r == Type.FLOAT) {
+            mv.visitInsn(floatOpcode);
+        } else if (l == Type.FLOAT && r == Type.INT) {
             mv.visitInsn(Opcodes.I2D);
-            mv.visitInsn(doubleOpcode);
-        } else if (left instanceof IntType && right instanceof FloatType) {
+            mv.visitInsn(floatOpcode);
+        } else if (l == Type.INT && r == Type.FLOAT) {
             // in this case, we've added a L2D instruction before the long operand beforehand
-            mv.visitInsn(doubleOpcode);
+            mv.visitInsn(floatOpcode);
         } else {
             throw new Error("unexpected numeric operation type combination: " + left + ", " + right);
         }
@@ -179,6 +256,7 @@ public class ByteCodeGeneration {
         String operation= operator.children.get(0).value;
         switch (operation) {
             case "-":
+                //pas sur de comment load
                 if (operandValue instanceof Integer) {
                     mv.visitInsn(Opcodes.ILOAD);  // Load an integer
                     mv.visitInsn(Opcodes.ICONST_0);
@@ -207,22 +285,159 @@ public class ByteCodeGeneration {
     }
 
     private Object Literal (Literal node) {
+        // instruction to load constants directly onto the stack
+        String literal = node.children.get(0).value;
+        if (literal.equals("true")) {
+            mv.visitLdcInsn(true);
+        } else if (literal.equals("false")) {
+            mv.visitLdcInsn(false);
+        }else if(literal.toCharArray()[0] == '\"'){
+            String a = literal.substring(1,literal.length()-1);
+            mv.visitLdcInsn(a);
+        }else if(literal.contains(".")){
+            Float a =  Float.parseFloat(literal);
+            mv.visitLdcInsn(a);
+        }else {
+            Integer a = Integer.parseInt(literal);
+            mv.visitLdcInsn(a);
+        }
         return null;
     }
-    private Object Variable(Variable node){
+    private Object variable(Variable node) {
+        String varName = node.children.get(0).value; // Assuming the variable name is stored in the first child
+        Type type = variables.get(varName).getValue(); // You would need a method to determine the variable's type
+
+        // Load the variable based on its type
+        switch (type.getSort()) {
+            case org.objectweb.asm.Type.INT:
+                loadIntVariable(varName);
+                break;
+            case  org.objectweb.asm.Type.FLOAT:
+                loadFloatVariable(varName);
+                break;
+            case Type.BOOLEAN:
+                loadBooleanVariable(varName);
+                break;
+            case Type.CHAR: //string??
+            case Type.OBJECT: // Structures??
+                loadReferenceVariable(varName);
+                break;
+        }
         return null;
     }
-    private Object arrayAccess (ArrayElementAccess node)
-    {
+
+    private void loadIntVariable(String varName) {
+        int index = getLocalVariableIndex(varName);
+        mv.visitVarInsn(Opcodes.ILOAD, index);
+    }
+
+    private void loadFloatVariable(String varName) {
+        int index = getLocalVariableIndex(varName);
+        mv.visitVarInsn(Opcodes.FLOAD, index);
+    }
+
+    private void loadBooleanVariable(String varName) {
+        int index = getLocalVariableIndex(varName);
+        mv.visitVarInsn(Opcodes.ILOAD, index); // Booleans are handled as integers in the JVM
+    }
+
+    private void loadReferenceVariable(String varName) {
+        int index = getLocalVariableIndex(varName);
+        mv.visitVarInsn(Opcodes.ALOAD, index);
+    }
+
+    private int getLocalVariableIndex(String varName) {
+        return variables.get(varName).getKey();
+    }
+    private Object arrayAccess(ArrayElementAccess node) {
+        String arrayName = ((Leaf)node.children.get(0)).value; // This retrieves the array name
+        Expression indexExpression = (Expression)node.children.get(1); // This retrieves the index expression
+
+        // Load the array onto the stack
+        // Assuming arrayName corresponds to a local variable index or field
+        loadArrayReference(arrayName);
+
+        // Evaluate the index expression and load the index onto the stack
+        expressionStmt(indexExpression);
+
+        // Perform the array load operation based on the array type
+        loadArrayElement();
+
         return null;
+    }
+
+    private void loadArrayReference(String arrayName) {
+        // Assuming local variable; modify if stored differently (e.g., as a field)
+        int arrayVarIndex = getLocalVariableIndex(arrayName);
+        mv.visitVarInsn(Opcodes.ALOAD, arrayVarIndex); // Load the array reference from a local variable
+    }
+
+    private void loadArrayElement() {
+        // You need to know the type of the array elements to choose the correct IALOAD, BALOAD, CALOAD, SALOAD, AALOAD, FALOAD, DALOAD, or LALOAD
+        // Example using IALOAD for an integer array
+        //voir le type de l'array
+        mv.visitInsn(Opcodes.IALOAD);
     }
     private Object arrayAndstructAccess (ArrayAndStructAccess node){
         return null;
     }
     private Object funCall (FunctionCall node) {
+        String functionName = node.children.get(0).value;
+        String descriptor = getFunctionDescriptor(node);
+        for(int i = 1; i< node.children.size(); i++){
+            //pushes the result of expressions onto the stack
+            expressionStmt((Expression) node.children.get(i).children.get(0));
+        }
+        for(String str : builtInProcedures){
+            if(str.equals(functionName)){
+                //faire quelque chose pour les functions buildin
+                return null;
+            }
+        }
+        //j'avais oublié que ça pouvait aussi être une initialisation d'une structure oupssi
+        mv.visitMethodInsn(INVOKESTATIC, className, functionName, descriptor,false);
         return null;
     }
+    private String getFunctionDescriptor(FunctionCall node) {
+        StringBuilder descriptor = new StringBuilder();
+        descriptor.append("(");
+
+        for (Node child : node.children) {
+            if (child instanceof Argument) {
+                Argument a = (Argument) child;
+                descriptor.append(getTypeDescriptor(a.children.get(1).children.get(0).value));
+            }
+        }
+
+        descriptor.append(")");
+
+        descriptor.append(getTypeDescriptor(node.children.get(node.children.size()-1).children.get(0).value));
+
+        return descriptor.toString();
+    }
     private Object expressionStmt (Expression node) {
+        Node n = node.children.get(0);
+        if(n instanceof Variable){
+            variable((Variable) n);
+        }
+        else if (n instanceof BinaryExpression){
+            binaryExpression((BinaryExpression) n);
+        }else if(n instanceof UnaryExpression){
+            unaryExpression((UnaryExpression) n);
+        }else if (n instanceof Expression){
+            expressionStmt((Expression) n);
+        }else if(n instanceof Literal){
+            Literal((Literal) n);
+        }else if(n instanceof ArrayAndStructAccess){
+            arrayAndstructAccess((ArrayAndStructAccess) n);
+        }else if (n instanceof ArrayElementAccess){
+            arrayAccess((ArrayElementAccess) n);
+        }else if(n instanceof FunctionCall){
+            funCall((FunctionCall) n);
+        }
+        else if(n instanceof StructFieldAccess){
+            fieldAccess((StructFieldAccess) n);
+        }
         return null;
     }
     private Object returnStmt (ReturnStatement node) {
@@ -231,11 +446,38 @@ public class ByteCodeGeneration {
         }
         else{
             expressionStmt((Expression)node.children.get(0));
+            //mv.visitInsn();
 
         }
         return null;
     }
     private Object block (BlockInstruction node) {
+        ArrayList<Node> BlockIntructions = node.children;
+        for (Node nodeChildren : BlockIntructions){
+            if(nodeChildren instanceof IfStatement){
+                ifStmt((IfStatement) nodeChildren);
+            }
+            else if (nodeChildren instanceof WhileStatement){
+                whileStmt((WhileStatement) nodeChildren);
+            }
+            else if (nodeChildren instanceof ForStatement){
+                forStmt((ForStatement) nodeChildren);
+
+            }else if (nodeChildren instanceof Free) {
+                free((Free) nodeChildren);
+            }
+            else if( nodeChildren instanceof FunctionCall){
+                funCall((FunctionCall) nodeChildren);
+            }else if(nodeChildren instanceof ReturnStatement){
+                returnStmt((ReturnStatement) nodeChildren);
+            }else if(nodeChildren instanceof Assignment){
+                assignment((Assignment) nodeChildren);
+            }else if (nodeChildren instanceof VariableDeclaration){
+                varDecl((VariableDeclaration) nodeChildren);
+            }else if (nodeChildren instanceof GlobalDeclaration){
+                globalDeclaration((GlobalDeclaration) nodeChildren);
+            }
+        }
         return null;
     }
 

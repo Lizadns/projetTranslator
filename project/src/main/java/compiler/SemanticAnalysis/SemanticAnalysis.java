@@ -478,6 +478,7 @@ public class SemanticAnalysis {
                             if(!typearg.equals(typeparam)){ //mauvais type
                                 throw  new SemanticException("ArgumentError");
                             }
+                            a.addType(typearg);
                             j++;
                         }
                     }
@@ -505,7 +506,9 @@ public class SemanticAnalysis {
             }
             else{
                 checkFunctionCall((FunctionCall) node);
-                return getReturnType((FunctionCall) node, root);
+                String type = getReturnType((FunctionCall) node, root);
+                ((FunctionCall) node).addType(type);
+                return type;
             }
         }
         else if(node instanceof ArrayAndStructAccess){ //... = array[e].attribute
@@ -576,12 +579,12 @@ public class SemanticAnalysis {
             String literal = literalNodes.get(0).value;
             if(literal.equals("true") || literal.equals("false")){
                 return "bool";
+            }else if(literal.toCharArray()[0] == '\"'){
+                return "string";
             }else if(literal.contains(".")){
                 return "float";
-            }else if(literal.contains("0")||literal.contains("1")||literal.contains("2")||literal.contains("3")||literal.contains("4")||literal.contains("5")||literal.contains("6")||literal.contains("7")||literal.contains("8")||literal.contains("9")){
-                return "int";
             }else {
-                return "string";
+                return "int";
             }
 
         }else if(node instanceof CharAccessInStringArray){//arrayString[3][2]

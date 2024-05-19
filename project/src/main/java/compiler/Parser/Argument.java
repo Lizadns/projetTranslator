@@ -7,4 +7,8 @@ public class Argument extends Node{
         super("Argument", new ArrayList<>());
         this.children.add(expression);
     }
+
+    public void addType(String type){
+        this.children.add(new Type(type));
+    }
 }

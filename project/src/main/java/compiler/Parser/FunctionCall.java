@@ -8,4 +8,8 @@ public class FunctionCall extends Node{
         this.children.add(new Leaf(name));
         this.children.addAll(arguments);
     }
+
+    public void addType(String type){
+        this.children.add(new Type(type));
+    }
 }
