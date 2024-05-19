@@ -251,14 +251,14 @@ public class ByteCodeGeneration {
             else if (nodeChildren instanceof ForStatement){
                 forStmt((ForStatement) nodeChildren);
 
-            }else if (nodeChildren instanceof Free){
+            }else if (nodeChildren instanceof Free) {
                 free((Free) nodeChildren);
-
+            }
         }
         return null;
     }
-    private Object ifStmt (IfStatement node)
-    {
+
+    private Object ifStmt(IfStatement node) {
         MethodVisitor mvs = mv;
         Label endIfLabel = new Label();
         Label endElseLabel = new Label();
@@ -279,7 +279,7 @@ public class ByteCodeGeneration {
         return null;
     }
 
-    private Object whileStmt (WhileStatement node)
+    private Object whileStmt(WhileStatement node)
     {
         MethodVisitor mvs = mv;
         Label startLabel = new Label();
@@ -296,7 +296,7 @@ public class ByteCodeGeneration {
         return null;
     }
 
-    private Object forStmt (ForStatement node){
+    private Object forStmt(ForStatement node){
         MethodVisitor mvs = mv;
         Label startFor = new Label();
         Label endFor = new Label();
