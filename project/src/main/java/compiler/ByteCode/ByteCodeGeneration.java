@@ -11,6 +11,7 @@ import org.objectweb.asm.Type;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
@@ -22,6 +23,7 @@ public class ByteCodeGeneration {
     private String className;
     private int variableCounter = 0;
     private boolean topLevel;
+    private HashMap<String, Pair<Integer,org.objectweb.asm.Type>> variables = new HashMap<>();
 
     private void compile(){
 
@@ -329,23 +331,24 @@ public class ByteCodeGeneration {
 
 
 
-    private int registerVariable (Node node, org.objectweb.asm.Type type) {
+    private int registerVariable (String name, org.objectweb.asm.Type type) {
         int index = variableCounter;
         variableCounter += type.getSize();
+        variables.put(name,new Pair<>(index, type));
         return index;
     }
     private Object varDecl (VariableDeclaration node)
     {
         String typeVariable = node.children.get(0).value;
         org.objectweb.asm.Type type = org.objectweb.asm.Type.getType(node.children.get(0).value);
-        int index = registerVariable(node, type);
-        //PAS FINI
+        registerVariable(node.children.get(1).value, type);
         return null;
     }
     private Object constantDeclaration (ConstantDeclaration node){
         return null;
     }
     private Object globalDeclaration(GlobalDeclaration node){
+
         return null;
     }
 
@@ -362,6 +365,21 @@ public class ByteCodeGeneration {
 
     public Object assignment (Assignment node)
     {
+        Node left = node.children.get(0);
+        if(left instanceof Variable){
+            expressionStmt((Expression) node.children.get(0));
+            Pair p = variables.get(left.children.get(0).value);
+            org.objectweb.asm.Type type = (org.objectweb.asm.Type) p.getValue();
+            int index = (int) p.getKey();
+            //convertir les 2 types ???
+            mv.visitVarInsn(type.getOpcode(ISTORE), index);
+
+        }else if (left instanceof StructFieldAccess){
+
+        }else if(left instanceof ArrayElementAccess){
+
+        }
+
         return null;
     }
 
