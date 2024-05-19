@@ -238,6 +238,10 @@ public class ByteCodeGeneration {
         return op.children.get(0).value.equals("&&") || op.children.get(0).value.equals("||");
     }
 
+    private boolean enablesPromotion (BinaryOperator op) {
+        return isArithmetic(op) || isComparison(op) || isEquality(op);
+    }
+
     private boolean isArithmetic (BinaryOperator op) {
         return op.children.get(0).value.equals("+") || op.children.get(0).value.equals("*") || op.children.get(0).value.equals("-") || op.children.get(0).value.equals("/") || op.children.get(0).value.equals("%");
     }
@@ -358,7 +362,7 @@ public class ByteCodeGeneration {
 
         // Load the array onto the stack
         // Assuming arrayName corresponds to a local variable index or field
-        loadArrayReference(arrayName);
+        loadReference(arrayName);
 
         // Evaluate the index expression and load the index onto the stack
         expressionStmt(indexExpression);
@@ -369,7 +373,7 @@ public class ByteCodeGeneration {
         return null;
     }
 
-    private void loadArrayReference(String arrayName) {
+    private void loadReference(String arrayName) {
         // Assuming local variable; modify if stored differently (e.g., as a field)
         int arrayVarIndex = getLocalVariableIndex(arrayName);
         mv.visitVarInsn(Opcodes.ALOAD, arrayVarIndex); // Load the array reference from a local variable
@@ -382,8 +386,37 @@ public class ByteCodeGeneration {
         mv.visitInsn(Opcodes.IALOAD);
     }
     private Object arrayAndstructAccess (ArrayAndStructAccess node){
+        String arrayName = ((Leaf)node.children.get(0)).value; // This could be an array or object name
+        Expression indexExpression = (Expression)node.children.get(1); // This is used as an index or could be an expression for further field access
+        String fieldName = ((Leaf)node.children.get(2)).value; // This could be an array index as a string or a field name
+
+        // Load the array or object reference onto the stack
+        // Assuming we know how to get the reference (local var, field, etc.)
+        loadReference(arrayName);
+
+        expressionStmt(indexExpression);
+        // Determine if the operation is on an array or a structure
+        mv.visitInsn(Opcodes.AALOAD);
+
+        // Now the structure is on top of the stack; access its field
+        String fieldDescriptor = getFieldDescriptor(arrayName, fieldName); // You need to define how to get this
+        mv.visitFieldInsn(Opcodes.GETFIELD, getTypeInternalName(arrayName), fieldName, fieldDescriptor);
+
         return null;
     }
+    private String getTypeInternalName(String arrayName) {
+        // You need to determine the internal JVM name for the structure's class
+        // Example: if your structures are instances of a class 'MyStructure', this name would be something like 'com/myapp/MyStructure'
+        return "com/myapp/MyStructure";  // Adjust this method to fetch actual type name
+    }
+
+    private String getFieldDescriptor(String arrayName, String fieldName) {
+        // Return the field descriptor based on the actual type of the field
+        // Example: for integer fields, it's "I"; for object references, it's "Lcom/myapp/MyObject;"
+        // This could be more dynamic depending on how you manage type information
+        return "I";  // Example for an integer field; adjust as needed
+    }
+
     private Object funCall (FunctionCall node) {
         String functionName = node.children.get(0).value;
         String descriptor = getFunctionDescriptor(node);
