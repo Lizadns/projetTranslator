@@ -823,12 +823,15 @@ public class ByteCodeGeneration {
     private Object globalDeclaration(GlobalDeclaration node){
         String name = node.children.get(1).value;
         String type = node.children.get(0).children.get(0).value;
-        Object value = expressionStmt((Expression) node.children.get(2));
         if (topLevel){//si variable de classe
+            isInitialise = true;
+            Object value = expressionStmt((Expression) node.children.get(2));
+            isInitialise=false;
             cw.visitField(Opcodes.ACC_STATIC , name, getTypeDescriptor(type),null,value);//sais pas si la class est ok
             classVariable.put(name,getTypeDescriptor(type));//pour savoir que cette variable est une instance de classe
         }
         else{//si variable locale
+            expressionStmt((Expression) node.children.get(2));
             org.objectweb.asm.Type typeASM = org.objectweb.asm.Type.getType(getTypeDescriptor(type));
             int index = registerVariable(node.children.get(1).value, typeASM);
             mv.visitVarInsn(typeASM.getOpcode(ISTORE), index);
