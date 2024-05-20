@@ -752,7 +752,7 @@ public class ByteCodeGeneration {
             mv.visitLabel(endIfLabel);
 
         }else{//c'est le else
-            //expressionStmt((Expression) node.children.get(1));
+            expressionStmt((Expression) node.children.get(1));
             mv.visitJumpInsn(IFNE , endElseLabel); //si la condtion est vrai et qu'il y a un else, va à la fin du else
             block((BlockInstruction) node.children.get(2));
             mv.visitLabel(endElseLabel);
@@ -783,11 +783,13 @@ public class ByteCodeGeneration {
         Label startFor = new Label();
         Label endFor = new Label();
 
+        assignment((Assignment) node.children.get(0));
         mv.visitLabel(startFor);
         expressionStmt((Expression) node.children.get(1));
-        mv.visitJumpInsn(IFEQ,endFor);
+        mv.visitJumpInsn(Opcodes.IFEQ,endFor);
         block((BlockInstruction) node.children.get(3));
-        mv.visitJumpInsn(GOTO,startFor);  //fin du block donc retourne au début de la boucle
+        assignment((Assignment) node.children.get(2));
+        mv.visitJumpInsn(Opcodes.GOTO,startFor);  //fin du block donc retourne au début de la boucle
         mv.visitLabel(endFor);
 
         return null;
@@ -821,7 +823,7 @@ public class ByteCodeGeneration {
     {
         String typeVariable = node.children.get(0).value;
         org.objectweb.asm.Type type = org.objectweb.asm.Type.getType(getTypeDescriptor(node.children.get(0).value));
-        registerVariable(node.children.get(1).value, type);
+        registerVariable(node.children.get(1).children.get(0).value, type);
         return null;
     }
     private Object constantDeclaration (ConstantDeclaration node){
