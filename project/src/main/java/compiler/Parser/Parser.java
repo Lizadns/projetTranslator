@@ -12,6 +12,7 @@ import java.util.Objects;
 public class Parser {
     static Lexer lexer;
     static Symbol lookahead;
+    static Expression expressionIf;
 
     public Parser(Lexer lexer){
         this.lexer=lexer;
@@ -646,13 +647,14 @@ public class Parser {
             matchValue("if");
             matchValue("(");
             Expression expression = parseExpression();
+            expressionIf = expression;
             matchValue(")");
             BlockInstruction body = parseBlock();
             return new IfStatement("if",expression,body);
         } else {
             matchValue("else");
             BlockInstruction body = parseBlock();
-            return new IfStatement("else",null,body);
+            return new IfStatement("else",expressionIf,body);
         }
     }
 
@@ -661,13 +663,14 @@ public class Parser {
             matchValue("if");
             matchValue("(");
             Expression expression = parseExpression();
+            expressionIf = expression;
             matchValue(")");
             BlockInstruction body = parseBlockStatement();
             return new IfStatement("if",expression,body);
         } else {
             matchValue("else");
             BlockInstruction body = parseBlockStatement();
-            return new IfStatement("else",null,body);
+            return new IfStatement("else",expressionIf,body);
         }
     }
 
