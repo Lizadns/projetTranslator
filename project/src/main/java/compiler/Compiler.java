@@ -16,7 +16,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Map;
 
-import static jdk.nashorn.internal.objects.Global.print;
 
 
 public class Compiler {
@@ -63,7 +62,7 @@ public class Compiler {
             lexer = new Lexer(new FileReader(args[0]));
             parser = new Parser(lexer);
             printLexer= Boolean.FALSE;
-            printParser=Boolean.FALSE;
+            printParser=Boolean.TRUE;
             className = args[2];
         }
         else {
