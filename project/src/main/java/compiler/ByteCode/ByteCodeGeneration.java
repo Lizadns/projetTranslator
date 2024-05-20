@@ -540,7 +540,6 @@ public class ByteCodeGeneration {
 
     private Object funCall (FunctionCall node) {
         String functionName = node.children.get(0).value;
-        String descriptor = getFunctionDescriptor(node);
         for(int i = 1; i< node.children.size(); i++){
             //pushes the result of expressions onto the stack
             if(node.children.get(i) instanceof Argument) {
@@ -550,12 +549,60 @@ public class ByteCodeGeneration {
         for(String str : builtInProcedures){
             if(str.equals(functionName)){
                 //faire quelque chose pour les functions buildin
+                handleBuiltInFunction(functionName, node);
                 return null;
             }
         }
+        String descriptor = getFunctionDescriptor(node);
         //j'avais oublié que ça pouvait aussi être une initialisation d'une structure oupssi
         mv.visitMethodInsn(INVOKESTATIC, className, functionName, descriptor,false);
         return null;
+    }
+
+    private void handleBuiltInFunction(String functionName, FunctionCall node) {
+        switch (functionName) {
+            case "readInt":
+                readInt();
+                break;
+            case "readFloat":
+                break;
+            case "readString":
+                break;
+            case "writeInt":
+            case "writeFloat":
+            case "write":
+            case "writeln":
+                write(node, functionName);
+                break;
+            case "len":
+                break;
+            case "floor":
+                floor(node);
+                break;
+            case "chr":
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported function: " + functionName);
+        }
+    }
+
+    private void readInt() {
+        mv.visitTypeInsn(NEW, "java/util/Scanner");
+        mv.visitInsn(DUP);
+        mv.visitFieldInsn(GETSTATIC, "java/lang/System", "in", "Ljava/io/InputStream;");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/Scanner", "nextInt", "()I", false);
+    }
+
+    private void write(FunctionCall node, String functionName) {
+        // Assume node.children.get(1) holds the value to write
+        mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+        mv.visitInsn(SWAP);  // Swap to match the expected order for print methods
+        String descriptor = functionName.equals("writeln") ? "(Ljava/lang/Object;)V" : "(I)V"; // Simplified
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", functionName.equals("writeln") ? "println" : "print", descriptor, false);
+    }
+    private void floor(FunctionCall node) {
+        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Math", "floor", "(F)I", false);
     }
     private String getFunctionDescriptor(FunctionCall node) {
         StringBuilder descriptor = new StringBuilder();
@@ -752,7 +799,7 @@ public class ByteCodeGeneration {
             mv.visitLabel(endIfLabel);
 
         }else{//c'est le else
-            //expressionStmt((Expression) node.children.get(1));
+            expressionStmt((Expression) node.children.get(1));
             mv.visitJumpInsn(IFNE , endElseLabel); //si la condtion est vrai et qu'il y a un else, va à la fin du else
             block((BlockInstruction) node.children.get(2));
             mv.visitLabel(endElseLabel);
@@ -821,7 +868,8 @@ public class ByteCodeGeneration {
     {
         String typeVariable = node.children.get(0).value;
         org.objectweb.asm.Type type = org.objectweb.asm.Type.getType(getTypeDescriptor(node.children.get(0).value));
-        registerVariable(node.children.get(1).value, type);
+        int index = registerVariable(node.children.get(1).value, type);
+        mv.visitLocalVariable(node.children.get(1).value, getTypeDescriptor(typeVariable), null, start, end, index);
         return null;
     }
     private Object constantDeclaration (ConstantDeclaration node){
