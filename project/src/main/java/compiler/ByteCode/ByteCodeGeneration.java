@@ -29,6 +29,7 @@ public class ByteCodeGeneration {
     private Program root;
     private int variableCounter = 0;
     private boolean topLevel;
+    private boolean isInitialise;
     private HashMap<String, Pair<Integer,org.objectweb.asm.Type>> variables = new HashMap<>();
     private HashMap<String, String> classVariable = new HashMap<>();
 
@@ -42,7 +43,7 @@ public class ByteCodeGeneration {
     }
 
     public Map<String, byte[]> compile(String binaryName, Node root) {
-        this.className = binaryName.replace('.', '/');
+        this.className = binaryName.replace(".class", "");
         root((Program) root);
         Map<String, byte[]> compiledClasses = new HashMap<>();
         compiledClasses.put(className, cw.toByteArray());
@@ -85,10 +86,11 @@ public class ByteCodeGeneration {
     }
 
     private byte[] root (Program node){
-        cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         cw.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, className, null, "java/lang/Object", null);
         mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
         mv.visitCode();
+        topLevel = true;
         for (Node n :node.children) {
             if(n instanceof Declaration){
                 declaration((Declaration) n);
@@ -240,13 +242,13 @@ public class ByteCodeGeneration {
         } else if ((left.equals("float")|| left.equals("int")) && right.equals("float")) {
             // If left is an Int, we've added a L2D instruction before the long operand beforehand
             // Proper NaN handling: if NaN is involved, has to be false for all operations.
-            int opcode = op.children.get(0).value.equals("<") || op.children.get(0).value.equals("<=")  ? DCMPG : DCMPL;
+            int opcode = op.children.get(0).value.equals("<") || op.children.get(0).value.equals("<=")  ? FCMPG : FCMPL;
             mv.visitInsn(opcode);
             mv.visitJumpInsn(doubleWidthOpcode, trueLabel);
         } else if (left.equals("float") && right.equals("int")) {
-            mv.visitInsn(L2D);
+            mv.visitInsn(L2F);
             // Proper NaN handling: if NaN is involved, has to be false for all operations.
-            int opcode = op.children.get(0).value.equals("<") || op.children.get(0).value.equals("<=")  ? DCMPG : DCMPL;
+            int opcode = op.children.get(0).value.equals("<") || op.children.get(0).value.equals("<=")  ? FCMPG : FCMPL;
             mv.visitInsn(opcode);
             mv.visitJumpInsn(doubleWidthOpcode, trueLabel);
         } else if (left.equals("bool") && right.equals("bool")) {
@@ -341,38 +343,56 @@ public class ByteCodeGeneration {
         // instruction to load constants directly onto the stack
         String literal = node.children.get(0).value;
         if (literal.equals("true")) {
+            if(isInitialise){
+                return true;
+            }
             mv.visitLdcInsn(true);
         } else if (literal.equals("false")) {
+            if(isInitialise){
+                return false;
+            }
             mv.visitLdcInsn(false);
         }else if(literal.toCharArray()[0] == '\"'){
             String a = literal.substring(1,literal.length()-1);
+            if(isInitialise){
+                return a;
+            }
             mv.visitLdcInsn(a);
         }else if(literal.contains(".")){
             Float a =  Float.parseFloat(literal);
+            if(isInitialise){
+                return a;
+            }
             mv.visitLdcInsn(a);
         }else {
             Integer a = Integer.parseInt(literal);
+            if(isInitialise){
+                return a;
+            }
             mv.visitLdcInsn(a);
         }
         return null;
     }
     private Object variable(Variable node) {
         String varName = node.children.get(0).value; // Assuming the variable name is stored in the first child
-        Type type = variables.get(varName).getValue(); // You would need a method to determine the variable's type
-
+        // You would need a method to determine the variable's type
+        compiler.Parser.Type t = (compiler.Parser.Type) node.children.get(1);
+        String type = t.children.get(0).value;
         // Load the variable based on its type
-        switch (type.getSort()) {
-            case org.objectweb.asm.Type.INT:
+        switch (type) {
+            case "int":
                 loadIntVariable(varName);
                 break;
-            case  org.objectweb.asm.Type.FLOAT:
+            case  "float":
                 loadFloatVariable(varName);
                 break;
-            case Type.BOOLEAN:
+            case "bool":
                 loadBooleanVariable(varName);
                 break;
-            case Type.CHAR: //string??
-            case Type.OBJECT: // Structures??
+            case "string":
+                loadStringVariable(varName);
+                break;
+            default: // Structures??
                 loadReferenceVariable(varName);
                 break;
         }
@@ -380,23 +400,57 @@ public class ByteCodeGeneration {
     }
 
     private void loadIntVariable(String varName) {
-        int index = getLocalVariableIndex(varName);
-        mv.visitVarInsn(Opcodes.ILOAD, index);
+        if(topLevel){
+            cw.visitField(GETSTATIC, varName, "I",null,null);
+            //mv.visitFieldInsn(GETSTATIC, className, varName, "I");
+        }
+        else {
+            int index = getLocalVariableIndex(varName);
+            mv.visitVarInsn(Opcodes.ILOAD, index);
+        }
     }
 
     private void loadFloatVariable(String varName) {
-        int index = getLocalVariableIndex(varName);
-        mv.visitVarInsn(Opcodes.FLOAD, index);
+        if(topLevel){
+            cw.visitField(GETSTATIC, varName, "F",null,null);
+            //mv.visitFieldInsn(GETSTATIC, className, varName, "F");
+        }
+        else {
+            int index = getLocalVariableIndex(varName);
+            mv.visitVarInsn(Opcodes.FLOAD, index);
+        }
     }
 
     private void loadBooleanVariable(String varName) {
-        int index = getLocalVariableIndex(varName);
-        mv.visitVarInsn(Opcodes.ILOAD, index); // Booleans are handled as integers in the JVM
+        if(topLevel){
+            cw.visitField(GETSTATIC, varName, "I",null,null);
+            //mv.visitFieldInsn(GETSTATIC, className, varName, "I");
+        }
+        else {
+            int index = getLocalVariableIndex(varName);
+            mv.visitVarInsn(Opcodes.ILOAD, index);
+        }// Booleans are handled as integers in the JVM
     }
 
     private void loadReferenceVariable(String varName) {
-        int index = getLocalVariableIndex(varName);
-        mv.visitVarInsn(Opcodes.ALOAD, index);
+        if(topLevel){
+            cw.visitField(GETSTATIC, varName, "A",null,null);
+            //mv.visitFieldInsn(GETSTATIC, className, varName, "A");
+        }
+        else {
+            int index = getLocalVariableIndex(varName);
+            mv.visitVarInsn(Opcodes.ALOAD, index);
+        }
+    }
+    private void loadStringVariable(String varName) {
+        if(topLevel){
+            cw.visitField(GETSTATIC, varName, "Ljava/lang/String;",null,null);
+            //mv.visitFieldInsn(GETSTATIC, className, varName, "A");
+        }
+        else {
+            int index = getLocalVariableIndex(varName);
+            mv.visitVarInsn(Opcodes.ALOAD, index);
+        }
     }
 
     private int getLocalVariableIndex(String varName) {
@@ -508,25 +562,25 @@ public class ByteCodeGeneration {
     private Object expressionStmt (Expression node) {
         Node n = node.children.get(0);
         if(n instanceof Variable){
-            variable((Variable) n);
+            return variable((Variable) n);
         }
         else if (n instanceof BinaryExpression){
-            binaryExpression((BinaryExpression) n);
+            return binaryExpression((BinaryExpression) n);
         }else if(n instanceof UnaryExpression){
-            unaryExpression((UnaryExpression) n);
+            return unaryExpression((UnaryExpression) n);
         }else if (n instanceof Expression){
-            expressionStmt((Expression) n);
+            return expressionStmt((Expression) n);
         }else if(n instanceof Literal){
-            Literal((Literal) n);
+            return Literal((Literal) n);
         }else if(n instanceof ArrayAndStructAccess){
-            arrayAndstructAccess((ArrayAndStructAccess) n);
+            return arrayAndstructAccess((ArrayAndStructAccess) n);
         }else if (n instanceof ArrayElementAccess){
-            arrayAccess((ArrayElementAccess) n);
+            return arrayAccess((ArrayElementAccess) n);
         }else if(n instanceof FunctionCall){
-            funCall((FunctionCall) n);
+            return funCall((FunctionCall) n);
         }
         else if(n instanceof StructFieldAccess){
-            fieldAccess((StructFieldAccess) n);
+            return fieldAccess((StructFieldAccess) n);
         }
         return null;
     }
@@ -613,6 +667,9 @@ public class ByteCodeGeneration {
             return getType((Expression)n.children.get(1));
         }
         else if( n instanceof BinaryExpression){
+            if(isComparison((BinaryOperator) n.children.get(1))||isEquality((BinaryOperator) n.children.get(1))){
+                return "bool";
+            }
             return getType((Expression)n.children.get(0));
         }
         else if (n instanceof Variable){
@@ -756,18 +813,19 @@ public class ByteCodeGeneration {
     private Object constantDeclaration (ConstantDeclaration node){
         String name = node.children.get(1).value;
         String type = node.children.get(0).children.get(0).value;
-        expressionStmt((Expression) node.children.get(2));
-        mv.visitFieldInsn(Opcodes.PUTSTATIC , className, name, getTypeDescriptor(type));//sais pas si la class est ok
+        isInitialise = true;
+        Object value = expressionStmt((Expression) node.children.get(2));
+        cw.visitField(Opcodes.ACC_FINAL + Opcodes.ACC_STATIC , name, getTypeDescriptor(type),null,value);//sais pas si la class est ok
+        isInitialise = false;
         classVariable.put(name,getTypeDescriptor(type));//pour savoir que cette variable est une constante
-
         return null;
     }
     private Object globalDeclaration(GlobalDeclaration node){
         String name = node.children.get(1).value;
         String type = node.children.get(0).children.get(0).value;
-        expressionStmt((Expression) node.children.get(2));
+        Object value = expressionStmt((Expression) node.children.get(2));
         if (topLevel){//si variable de classe
-            mv.visitFieldInsn(Opcodes.PUTSTATIC , className, name, getTypeDescriptor(type));//sais pas si la class est ok
+            cw.visitField(Opcodes.ACC_STATIC , name, getTypeDescriptor(type),null,value);//sais pas si la class est ok
             classVariable.put(name,getTypeDescriptor(type));//pour savoir que cette variable est une instance de classe
         }
         else{//si variable locale
