@@ -481,6 +481,7 @@ public class SemanticAnalysis {
                             a.addType(typearg);
                             j++;
                         }
+                        call.addType(m.children.get(1).children.get(0).value);
                     }
                 }
                 i++;

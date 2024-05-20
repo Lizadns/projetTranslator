@@ -24,6 +24,8 @@ import static org.objectweb.asm.Opcodes.*;
 public class ByteCodeGeneration {
 
     private ClassWriter cw;
+    private Label start;
+    private Label end;
     private MethodVisitor mv;
     private String className;
     private Program root;
@@ -91,6 +93,9 @@ public class ByteCodeGeneration {
         mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
         mv.visitCode();
         topLevel = true;
+        start = new Label();
+        end = new Label();
+        mv.visitLabel(start);
         for (Node n :node.children) {
             if(n instanceof Declaration){
                 declaration((Declaration) n);
@@ -100,6 +105,7 @@ public class ByteCodeGeneration {
             }
         }
         mv.visitInsn(Opcodes.RETURN);
+        mv.visitLabel(end);
         mv.visitEnd();
         mv.visitMaxs(-1, -1);
 
@@ -108,12 +114,13 @@ public class ByteCodeGeneration {
     }
 
     private Object funcDecl (Method node){
+        Label ancienstart =start;
+        Label ancienend = end;
         int surroundingVariableCounter = variableCounter;
         MethodVisitor surroundingMethod = mv;
         boolean surrondingIsTopLevel = topLevel;
         variableCounter=0;
         topLevel= false;
-
         for(Node n : node.children){
             if(n instanceof Param){
                 parameter((Param)n);
@@ -122,16 +129,22 @@ public class ByteCodeGeneration {
         String descriptor= getDescriptor(node) ;
         mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, node.children.get(0).children.get(0).value, descriptor, null, null);
         mv.visitCode();
+        start = new Label();
+        end = new Label();
+        mv.visitLabel(start);
         for(Node n : node.children){
             if(n instanceof BlockInstruction){
                 block((BlockInstruction) n);
             }
         }
+        mv.visitLabel(end);
         mv.visitEnd();
         mv.visitMaxs(-1, -1);
         mv= surroundingMethod;
         variableCounter= surroundingVariableCounter;
         topLevel= surrondingIsTopLevel;
+        start = ancienstart;
+        end = ancienend;
         return null;
     }
 
@@ -530,7 +543,9 @@ public class ByteCodeGeneration {
         String descriptor = getFunctionDescriptor(node);
         for(int i = 1; i< node.children.size(); i++){
             //pushes the result of expressions onto the stack
-            expressionStmt((Expression) node.children.get(i).children.get(0));
+            if(node.children.get(i) instanceof Argument) {
+                expressionStmt((Expression) node.children.get(i).children.get(0));
+            }
         }
         for(String str : builtInProcedures){
             if(str.equals(functionName)){
@@ -554,7 +569,6 @@ public class ByteCodeGeneration {
         }
 
         descriptor.append(")");
-
         descriptor.append(getTypeDescriptor(node.children.get(node.children.size()-1).children.get(0).value));
 
         return descriptor.toString();
@@ -824,17 +838,19 @@ public class ByteCodeGeneration {
         String name = node.children.get(1).value;
         String type = node.children.get(0).children.get(0).value;
         if (topLevel){//si variable de classe
-            isInitialise = true;
-            Object value = expressionStmt((Expression) node.children.get(2));
-            isInitialise=false;
-            cw.visitField(Opcodes.ACC_STATIC , name, getTypeDescriptor(type),null,value);//sais pas si la class est ok
+            //expressionStmt((Expression) node.children.get(2));
+            cw.visitField(Opcodes.ACC_STATIC , name, getTypeDescriptor(type),null,null);//sais pas si la class est ok
             classVariable.put(name,getTypeDescriptor(type));//pour savoir que cette variable est une instance de classe
+            assignment(new Assignment(new Variable(name), (Expression)node.children.get(2)));
         }
         else{//si variable locale
             expressionStmt((Expression) node.children.get(2));
             org.objectweb.asm.Type typeASM = org.objectweb.asm.Type.getType(getTypeDescriptor(type));
             int index = registerVariable(node.children.get(1).value, typeASM);
             mv.visitVarInsn(typeASM.getOpcode(ISTORE), index);
+            //mv.visitFieldInsn(Opcodes.PUTSTATIC, className, "a", "I");
+            mv.visitLocalVariable(name, getTypeDescriptor(type), null, start, end, index);
+            //mv.visitFieldInsn(PUTFIELD, className, name,getTypeDescriptor(type));
             variables.put(name, new Pair<>(index,typeASM));
         }
 
@@ -849,7 +865,9 @@ public class ByteCodeGeneration {
     }
 
     private Object parameter (Param node) {
-        registerVariable(node.children.get(1).value,org.objectweb.asm.Type.getType(getTypeDescriptor(node.children.get(0).children.get(0).value)));
+        int index = registerVariable(node.children.get(1).value,org.objectweb.asm.Type.getType(getTypeDescriptor(node.children.get(0).children.get(0).value)));
+        //mv.visitVarInsn(ISTORE, index);
+        //mv.visitLocalVariable(node.children.get(1).value,getTypeDescriptor(node.children.get(0).children.get(0).value),null,start,end,index);
         return null;
     }
 
@@ -872,9 +890,9 @@ public class ByteCodeGeneration {
             }else {//variable globale
                 // Accéder à la variable globale et la charger sur la pile
                 String type = classVariable.get(left.children.get(0).value);
-                mv.visitFieldInsn(Opcodes.GETSTATIC, className,left.children.get(0).value,type);
+                //mv.visitFieldInsn(Opcodes.GETSTATIC, className,left.children.get(0).value,type);
                 expressionStmt((Expression) node.children.get(1));
-                mv.visitInsn(Opcodes.IADD); //ajoute la valeur à la variable
+                //mv.visitInsn(Opcodes.IADD); //ajoute la valeur à la variable
                 mv.visitFieldInsn(Opcodes.PUTSTATIC, className,left.children.get(0).value , type);//remet à jour la variablede classe sur la heap
             }
 
