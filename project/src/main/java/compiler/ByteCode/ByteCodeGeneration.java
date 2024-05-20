@@ -742,17 +742,17 @@ public class ByteCodeGeneration {
     }
 
     private Object ifStmt(IfStatement node) {
-
         Label endIfLabel = new Label();
         Label endElseLabel = new Label();
 
-        if(node.children.get(0).equals("if")){//c'est le if
+        if(node.children.get(0).value.equals("if")){//c'est le if
             expressionStmt((Expression) node.children.get(1));
             mv.visitJumpInsn(IFEQ, endIfLabel);//si condition false, va à la fin du if
             block((BlockInstruction) node.children.get(2));
             mv.visitLabel(endIfLabel);
 
         }else{//c'est le else
+            //expressionStmt((Expression) node.children.get(1));
             mv.visitJumpInsn(IFNE , endElseLabel); //si la condtion est vrai et qu'il y a un else, va à la fin du else
             block((BlockInstruction) node.children.get(2));
             mv.visitLabel(endElseLabel);
