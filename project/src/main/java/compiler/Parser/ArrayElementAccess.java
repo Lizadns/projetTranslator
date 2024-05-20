@@ -9,4 +9,8 @@ public class ArrayElementAccess extends Node{
         this.children.add(new Leaf(arrayName));
         this.children.add(expression);
     }
+
+    public void addType(String type){
+        this.children.add(new Type(type));
+    }
 }
