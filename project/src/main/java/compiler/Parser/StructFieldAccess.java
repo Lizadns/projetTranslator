@@ -9,4 +9,8 @@ public class StructFieldAccess extends Node{
         this.children.add(new Leaf(structname));
         this.children.add(new Leaf(identifier));
     }
+
+    public void addType(String type){
+        this.children.add(new Type(type));
+    }
 }

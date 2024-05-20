@@ -526,6 +526,7 @@ public class SemanticAnalysis {
                 //est ce que la struct Point a bien un attribut x, c'est le leftType
                 //1.trouver la structure Point
             String typeAttribute = isTheStrucDefined(root, structName,attributName);
+            ((ArrayAndStructAccess) node).addType(typeAttribute);
             return typeAttribute;
         }else if(node instanceof ArrayElementAccess){//...=array[6]
                 //1. on cherche le type du tableau
@@ -536,6 +537,7 @@ public class SemanticAnalysis {
             if(!elementAccess.equals("int")){
                 throw new SemanticException("TypeError");
             }
+            ((ArrayElementAccess) node).addType(typeArrayDeclaration);
             return typeArrayDeclaration;
 
         }else if(node instanceof NewArray){//..=int[5]
@@ -554,6 +556,7 @@ public class SemanticAnalysis {
             String structName = v.children.get(0).children.get(0).value; //Point
             String nameStructField = node.children.get(1).value; //x
             String type = isTheStrucDefined(root, structName, nameStructField);
+            ((StructFieldAccess) node).addType(type);
             return type;
 
         }else if(node instanceof Variable){
@@ -570,6 +573,7 @@ public class SemanticAnalysis {
             else{
                 typeDeclaration=v.children.get(0).children.get(0).value;
             }
+            ((Variable) node).addType(typeDeclaration);
             return typeDeclaration;
         }else if (node instanceof Expression){
                 //nestedExpression

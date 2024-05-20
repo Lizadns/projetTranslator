@@ -9,4 +9,8 @@ public class ArrayAndStructAccess extends Node{
         this.children.add(e);
         this.children.add(new Leaf(identifier));
     }
+
+    public void addType(String type){
+        this.children.add(new Type(type));
+    }
 }

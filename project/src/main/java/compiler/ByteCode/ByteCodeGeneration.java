@@ -134,14 +134,14 @@ public class ByteCodeGeneration {
             return shortCircuit(node);
         expressionStmt((Expression) node.children.get(0));
         // promote int to float for mixed operations
-        Type left = null;
-        Type right = null; // initialiser
+        String left = getType((Expression)node.children.get(0));
+        String right = getType((Expression)node.children.get(2));
 
 
         expressionStmt((Expression) node.children.get(2));
         switch (node.children.get(1).children.get(0).value) {
             case "+":
-                if (getType(node.children.get(0)).equal("string")) { //voir si left == string
+                if (left.equals("string")) {
                     mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
                 } else {
                     numOperation(Opcodes.IADD, Opcodes.FADD, left, right);
@@ -181,28 +181,26 @@ public class ByteCodeGeneration {
         return null;
     }
 
-    private void comparison (BinaryOperator op, int doubleWidthOpcode, int boolOpcode, int objOpcode,  Type left, Type right) {
-        int l = left.getSort();
-        int r = right.getSort();
+    private void comparison (BinaryOperator op, int doubleWidthOpcode, int boolOpcode, int objOpcode,  String left, String right) {
         Label trueLabel = new Label();
         Label endLabel = new Label();
 
-        if (l== Type.INT && r == Type.INT) {
+        if (left.equals("int") && right.equals("int")) {
             mv.visitInsn(LCMP);
             mv.visitJumpInsn(doubleWidthOpcode, trueLabel);
-        } else if ((l == Type.FLOAT || l== Type.INT) && r == Type.FLOAT) {
+        } else if ((left.equals("float")|| left.equals("int")) && right.equals("float")) {
             // If left is an Int, we've added a L2D instruction before the long operand beforehand
             // Proper NaN handling: if NaN is involved, has to be false for all operations.
             int opcode = op.children.get(0).value.equals("<") || op.children.get(0).value.equals("<=")  ? DCMPG : DCMPL;
             mv.visitInsn(opcode);
             mv.visitJumpInsn(doubleWidthOpcode, trueLabel);
-        } else if (l == Type.FLOAT && r == Type.INT) {
+        } else if (left.equals("float") && right.equals("int")) {
             mv.visitInsn(L2D);
             // Proper NaN handling: if NaN is involved, has to be false for all operations.
             int opcode = op.children.get(0).value.equals("<") || op.children.get(0).value.equals("<=")  ? DCMPG : DCMPL;
             mv.visitInsn(opcode);
             mv.visitJumpInsn(doubleWidthOpcode, trueLabel);
-        } else if (l == Type.BOOLEAN && r == Type.BOOLEAN) {
+        } else if (left.equals("bool") && right.equals("bool")) {
             mv.visitJumpInsn(boolOpcode, trueLabel);
         } else {
             mv.visitJumpInsn(objOpcode, trueLabel);
@@ -215,18 +213,16 @@ public class ByteCodeGeneration {
         mv.visitLabel(endLabel);
     }
 
-    private void numOperation(int intOpcode, int floatOpcode, Type left, Type right)
+    private void numOperation(int intOpcode, int floatOpcode, String left, String right)
     {
-        int l = left.getSort();
-        int r = right.getSort();
-        if (l== Type.INT && r == Type.INT) {
+        if (left.equals("int")  &&  right.equals("int")) {
             mv.visitInsn(intOpcode);
-        } else if (l == Type.FLOAT && r == Type.FLOAT) {
+        } else if (left.equals("float") &&right.equals("float")) {
             mv.visitInsn(floatOpcode);
-        } else if (l == Type.FLOAT && r == Type.INT) {
+        } else if (left.equals("float") && right.equals("int")) {
             mv.visitInsn(Opcodes.I2D);
             mv.visitInsn(floatOpcode);
-        } else if (l == Type.INT && r == Type.FLOAT) {
+        } else if (left.equals("int")  && right.equals("float")) {
             // in this case, we've added a L2D instruction before the long operand beforehand
             mv.visitInsn(floatOpcode);
         } else {
@@ -259,23 +255,24 @@ public class ByteCodeGeneration {
     {
         UnaryOperator operator = (UnaryOperator) node.children.get(0);
         Expression e = (Expression) node.children.get(1);
-        Object operandValue =expressionStmt(e);
+        expressionStmt(e);
+        String type =getType(e);
         String operation= operator.children.get(0).value;
         switch (operation) {
             case "-":
                 //pas sur de comment load
-                if (operandValue instanceof Integer) {
+                if (type.equals("int")) {
                     mv.visitInsn(Opcodes.ILOAD);  // Load an integer
                     mv.visitInsn(Opcodes.ICONST_0);
                     mv.visitInsn(Opcodes.ISUB);
-                } else if (operandValue instanceof Double) {
-                    mv.visitInsn(Opcodes.DLOAD);
-                    mv.visitInsn(Opcodes.DCONST_0);
-                    mv.visitInsn(Opcodes.DSUB);
+                } else if (type.equals("float")) {
+                    mv.visitInsn(Opcodes.FLOAD);
+                    mv.visitInsn(Opcodes.FCONST_0);
+                    mv.visitInsn(Opcodes.FSUB);
                 }
                 break;
             case "!":
-                if (operandValue instanceof Boolean) {
+                if (type.equals("bool")) {
                     Label falseLabel = new Label();
                     Label endLabel = new Label();
                     //If the value on top of the stack is false (0), the IFEQ, it will jump to the falseLabel where it pushes 1 (true) onto the stack
@@ -366,9 +363,9 @@ public class ByteCodeGeneration {
 
         // Evaluate the index expression and load the index onto the stack
         expressionStmt(indexExpression);
-
+        String type = node.children.get(2).children.get(0).value;
         // Perform the array load operation based on the array type
-        loadArrayElement();
+        loadArrayElement(type);
 
         return null;
     }
@@ -379,11 +376,19 @@ public class ByteCodeGeneration {
         mv.visitVarInsn(Opcodes.ALOAD, arrayVarIndex); // Load the array reference from a local variable
     }
 
-    private void loadArrayElement() {
+    private void loadArrayElement(String type) {
         // You need to know the type of the array elements to choose the correct IALOAD, BALOAD, CALOAD, SALOAD, AALOAD, FALOAD, DALOAD, or LALOAD
         // Example using IALOAD for an integer array
         //voir le type de l'array
-        mv.visitInsn(Opcodes.IALOAD);
+        if(type.equals("int")){
+            mv.visitInsn(Opcodes.IALOAD);
+        }else if(type.equals("bool")){
+            mv.visitInsn(Opcodes.BALOAD);
+        }else if(type.equals("float")){
+            mv.visitInsn(Opcodes.FALOAD);
+        }else { //string or struct
+            mv.visitInsn(Opcodes.AALOAD);
+        }
     }
     private Object arrayAndstructAccess (ArrayAndStructAccess node){
         String arrayName = ((Leaf)node.children.get(0)).value; // This could be an array or object name
@@ -482,10 +487,27 @@ public class ByteCodeGeneration {
         }
         else{
             expressionStmt((Expression)node.children.get(0));
-            //mv.visitInsn();
-
+            String type = getType((Expression)node.children.get(0));
+            switch (type) {
+                case "int":
+                    mv.visitInsn(Opcodes.IRETURN); // return an integer
+                    break;
+                case "float":
+                    mv.visitInsn(Opcodes.FRETURN); // return a float
+                    break;
+                case "bool":
+                    mv.visitInsn(Opcodes.IRETURN); // return a boolean
+                    break;
+                case "string":
+                    mv.visitInsn(Opcodes.ARETURN); // return a string
+                    break;
+                default: //pour les structures
+                    mv.visitInsn(Opcodes.ARETURN);
+                    break;
+            }
         }
         return null;
+
     }
     private Object block (BlockInstruction node) {
         ArrayList<Node> BlockIntructions = node.children;
@@ -513,6 +535,52 @@ public class ByteCodeGeneration {
             }else if (nodeChildren instanceof GlobalDeclaration){
                 globalDeclaration((GlobalDeclaration) nodeChildren);
             }
+        }
+        return null;
+    }
+
+    private String getType(Expression expression){
+        Node n = expression.children.get(0);
+        if(n instanceof FunctionCall){
+            compiler.Parser.Type t = (compiler.Parser.Type) n.children.get(n.children.size()-1);
+            return t.children.get(0).value;
+        }
+        else if( n instanceof Literal){
+            String literal = n.children.get(0).value;
+            if(literal.equals("true") || literal.equals("false")){
+                return "bool";
+            }else if(literal.toCharArray()[0] == '\"'){
+                return "string";
+            }else if(literal.contains(".")){
+                return "float";
+            }else {
+                return "int";
+            }
+        }
+        else if( n instanceof Expression){
+            return getType((Expression)n);
+        }
+        else if( n instanceof UnaryExpression){
+            return getType((Expression)n.children.get(1));
+        }
+        else if( n instanceof BinaryExpression){
+            return getType((Expression)n.children.get(0));
+        }
+        else if (n instanceof Variable){
+            compiler.Parser.Type t = (compiler.Parser.Type) n.children.get(1);
+            return t.children.get(0).value;
+        }
+        else if (n instanceof ArrayElementAccess){
+            compiler.Parser.Type t = (compiler.Parser.Type) n.children.get(2);
+            return t.children.get(0).value;
+        }
+        else if(n instanceof ArrayAndStructAccess){
+            compiler.Parser.Type t = (compiler.Parser.Type) n.children.get(3);
+            return t.children.get(0).value;
+        }
+        else if (n instanceof StructFieldAccess){
+            compiler.Parser.Type t = (compiler.Parser.Type) n.children.get(2);
+            return t.children.get(0).value;
         }
         return null;
     }
