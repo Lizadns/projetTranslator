@@ -1,21 +1,17 @@
 package compiler.ByteCode;
 import compiler.Parser.*;
-import compiler.SemanticAnalysis.SemanticException;
-import jdk.nashorn.internal.runtime.Scope;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
-import java.io.File;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.objectweb.asm.Opcodes.*;
 
