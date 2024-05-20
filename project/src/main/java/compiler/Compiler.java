@@ -6,6 +6,7 @@ package compiler;
 import compiler.Lexer.Lexer;
 import compiler.Lexer.Symbol;
 import compiler.Parser.Parser;
+import compiler.ByteCode.ByteCodeGeneration;
 import compiler.Parser.PrintAST;
 import compiler.Parser.Program;
 import compiler.SemanticAnalysis.SemanticAnalysis;
@@ -75,6 +76,9 @@ public class Compiler {
         }
         SemanticAnalysis sa = new SemanticAnalysis(node);
         sa.analyzeNode(node);
+
+        ByteCodeGeneration cg = new ByteCodeGeneration("test.class",node);
+        cg.compile("test.class",node);
     }
     }
 
