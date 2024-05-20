@@ -23,6 +23,7 @@ public class Compiler {
         Parser parser;
         Boolean printLexer;
         Boolean printParser;
+        String className = null;
 
         if (args.length == 1) {
             try {
@@ -55,6 +56,13 @@ public class Compiler {
                 return;
             }
         }
+        else if(args.length == 3 && args[1].equals("-o")){
+            lexer = new Lexer(new FileReader(args[0]));
+            parser = new Parser(lexer);
+            printLexer= Boolean.FALSE;
+            printParser=Boolean.FALSE;
+            className = args[2];
+        }
         else {
             System.err.println("Erreur : Mauvais Arguments");
             return;
@@ -77,8 +85,8 @@ public class Compiler {
         SemanticAnalysis sa = new SemanticAnalysis(node);
         sa.analyzeNode(node);
 
-        ByteCodeGeneration cg = new ByteCodeGeneration("test.class",node);
-        cg.compile("test.class",node);
+        ByteCodeGeneration cg = new ByteCodeGeneration(className,node);
+        cg.compile(className,node);
     }
     }
 
