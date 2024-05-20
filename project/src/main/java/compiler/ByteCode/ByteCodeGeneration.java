@@ -13,6 +13,7 @@ import org.objectweb.asm.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
@@ -31,8 +32,20 @@ public class ByteCodeGeneration {
     ArrayList<Pair<String, ClassWriter>> structs = new ArrayList<>();
     private String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln","len","floor","chr"};
 
-    private void compile(){
+    public Map<String, byte[]> compile(String binaryName, Node root) {
+        this.className = binaryName.replace('.', '/');
+        root((Program) root);
+        Map<String, byte[]> compiledClasses = new HashMap<>();
+        compiledClasses.put(className, cw.toByteArray());
 
+        Map<String, byte[]> structClasses = structs.stream()
+                .collect(Collectors.toMap(
+                        Pair::getKey,
+                        pair -> pair.getValue().toByteArray()
+                ));
+        compiledClasses.putAll(structClasses);
+
+        return compiledClasses;
     }
 
     private byte[] root (Program node){
@@ -700,7 +713,7 @@ public class ByteCodeGeneration {
     private Object varDecl (VariableDeclaration node)
     {
         String typeVariable = node.children.get(0).value;
-        org.objectweb.asm.Type type = org.objectweb.asm.Type.getType(getASMType(node.children.get(0).value));
+        org.objectweb.asm.Type type = org.objectweb.asm.Type.getType(getTypeDescriptor(node.children.get(0).value));
         registerVariable(node.children.get(1).value, type);
         return null;
     }
@@ -708,8 +721,8 @@ public class ByteCodeGeneration {
         String name = node.children.get(1).value;
         String type = node.children.get(0).children.get(0).value;
         expressionStmt((Expression) node.children.get(2));
-        mv.visitFieldInsn(Opcodes.PUTSTATIC , "main", name, getASMType(type));//sais pas si la class est ok
-        classVariable.put(name,getASMType(type));//pour savoir que cette variable est une constante
+        mv.visitFieldInsn(Opcodes.PUTSTATIC , className, name, getTypeDescriptor(type));//sais pas si la class est ok
+        classVariable.put(name,getTypeDescriptor(type));//pour savoir que cette variable est une constante
 
         return null;
     }
@@ -718,11 +731,11 @@ public class ByteCodeGeneration {
         String type = node.children.get(0).children.get(0).value;
         expressionStmt((Expression) node.children.get(2));
         if (topLevel){//si variable de classe
-            mv.visitFieldInsn(Opcodes.PUTSTATIC , "main", name, getASMType(type));//sais pas si la class est ok
-            classVariable.put(name,getASMType(type));//pour savoir que cette variable est une instance de classe
+            mv.visitFieldInsn(Opcodes.PUTSTATIC , className, name, getTypeDescriptor(type));//sais pas si la class est ok
+            classVariable.put(name,getTypeDescriptor(type));//pour savoir que cette variable est une instance de classe
         }
         else{//si variable locale
-            org.objectweb.asm.Type typeASM = org.objectweb.asm.Type.getType(getASMType(type));
+            org.objectweb.asm.Type typeASM = org.objectweb.asm.Type.getType(getTypeDescriptor(type));
             int index = registerVariable(node.children.get(1).value, typeASM);
             mv.visitVarInsn(typeASM.getOpcode(ISTORE), index);
             variables.put(name, new Pair<>(index,typeASM));
@@ -732,11 +745,14 @@ public class ByteCodeGeneration {
     }
 
     private Object newArray(NewArray node){
+
+        String type = node.children.get(0).children.get(0).value;
+
         return null;
     }
 
     private Object parameter (Param node) {
-        registerVariable(node.children.get(1).value,org.objectweb.asm.Type.getType(getASMType(node.children.get(0).children.get(0).value)));
+        registerVariable(node.children.get(1).value,org.objectweb.asm.Type.getType(getTypeDescriptor(node.children.get(0).children.get(0).value)));
         return null;
     }
 
@@ -759,10 +775,10 @@ public class ByteCodeGeneration {
             }else {//variable globale
                 // Accéder à la variable globale et la charger sur la pile
                 String type = classVariable.get(left.children.get(0).value);
-                mv.visitFieldInsn(Opcodes.GETSTATIC, "main",left.children.get(0).value,type);
+                mv.visitFieldInsn(Opcodes.GETSTATIC, className,left.children.get(0).value,type);
                 expressionStmt((Expression) node.children.get(1));
                 mv.visitInsn(Opcodes.IADD); //ajoute la valeur à la variable
-                mv.visitFieldInsn(Opcodes.PUTSTATIC, "main",left.children.get(0).value , type);//remet à jour la variablede classe sur la heap
+                mv.visitFieldInsn(Opcodes.PUTSTATIC, className,left.children.get(0).value , type);//remet à jour la variablede classe sur la heap
             }
 
 
@@ -823,7 +839,7 @@ public class ByteCodeGeneration {
         org.objectweb.asm.Type[] paramTypes = node.children.stream()
                 .skip(1)  // Skip the first element
                 .map(child -> (StructField) child)
-                .map(field -> org.objectweb.asm.Type.getType(getASMType(field.children.get(0).children.get(0).value)))
+                .map(field -> org.objectweb.asm.Type.getType(getTypeDescriptor(field.children.get(0).children.get(0).value)))
                 .toArray(org.objectweb.asm.Type[]::new);
         String descriptor = Type.getMethodDescriptor(org.objectweb.asm.Type.VOID_TYPE, paramTypes);
 
@@ -836,7 +852,7 @@ public class ByteCodeGeneration {
         for (int i = 1; i < node.children.size(); i++) {
             StructField field = (StructField) node.children.get(i);
             init.visitVarInsn(Opcodes.ALOAD, 0);
-            org.objectweb.asm.Type type = Type.getType(getASMType(field.children.get(0).children.get(0).value));
+            org.objectweb.asm.Type type = Type.getType(getTypeDescriptor(field.children.get(0).children.get(0).value));
             init.visitVarInsn(type.getOpcode(Opcodes.ILOAD), index);
             index += type.getSize();
             init.visitFieldInsn(Opcodes.PUTFIELD, binaryName, field.children.get(1).value, type.getDescriptor());
@@ -854,13 +870,13 @@ public class ByteCodeGeneration {
 
     private Object fieldDecl (StructField node)
     {
-        struct.visitField(ACC_PUBLIC, node.children.get(1).value, getASMType(node.children.get(0).children.get(0).value), null, null);
+        struct.visitField(ACC_PUBLIC, node.children.get(1).value, getTypeDescriptor(node.children.get(0).children.get(0).value), null, null);
         return null;
     }
 
     private Object fieldAccess (StructFieldAccess node) {
         //run(node.stem); c'est une expression mais je comprends pas
-        // je ne sais pas comment retrouver le nom de la structure (binaryName) et le type du field (nodeFieldDescriptor)
+        // je ne sais pas comment retrouver le nom de la classe de la structure (binaryName) et le type du field (nodeFieldDescriptor)
 
         //mv.visitFieldInsn(GETFIELD, binaryName, node.children.get(1).value, nodeFieldDescriptor(node));
         return null;
@@ -869,33 +885,6 @@ public class ByteCodeGeneration {
     private Object charAccessInStringArray(CharAccessInStringArray node){
         return null;
     }
-
-    private String getASMType(String type){//jsp comment faire si le type c'est une structure
-        switch (type){
-            case "int":
-                return "I";
-            case "bool":
-                return "Z";
-            case "string":
-                return "Ljava/lang/String;";
-            case "float":
-                return "F";
-            case "int[]":
-                return "[I";
-            case "bool[]":
-                return "[Z";
-            case "string[]":
-                return "[Ljava/lang/String;";
-            case "float[]":
-                return "[F";
-            default:
-                throw new IllegalArgumentException("Type non supporté: " + type);
-        }
-    }
-
-
-
-
 
 
 
