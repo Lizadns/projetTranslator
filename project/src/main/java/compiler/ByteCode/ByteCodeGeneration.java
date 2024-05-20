@@ -1,7 +1,6 @@
 package compiler.ByteCode;
 import compiler.Parser.*;
 import compiler.SemanticAnalysis.SemanticException;
-import javafx.util.Pair;
 import jdk.nashorn.internal.runtime.Scope;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -32,11 +31,11 @@ public class ByteCodeGeneration {
     private int variableCounter = 0;
     private boolean topLevel;
     private boolean isInitialise;
-    private HashMap<String, Pair<Integer,org.objectweb.asm.Type>> variables = new HashMap<>();
+    private HashMap<String,Integer> variables = new HashMap<>();
     private HashMap<String, String> classVariable = new HashMap<>();
 
     private ClassWriter struct;
-    ArrayList<Pair<String, ClassWriter>> structs = new ArrayList<>();
+    HashMap<String, ClassWriter> structs = new HashMap<>();
     private String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln","len","floor","chr"};
 
     public ByteCodeGeneration(String className,Program root){
@@ -50,11 +49,13 @@ public class ByteCodeGeneration {
         Map<String, byte[]> compiledClasses = new HashMap<>();
         compiledClasses.put(className, cw.toByteArray());
 
-        Map<String, byte[]> structClasses = structs.stream()
-                .collect(Collectors.toMap(
-                        Pair::getKey,
-                        pair -> pair.getValue().toByteArray()
-                ));
+        Map<String, byte[]> structClasses = new HashMap<>();
+        for (Map.Entry<String, ClassWriter> entry : structs.entrySet()) {
+            String className = entry.getKey();
+            ClassWriter cw = entry.getValue();
+            byte[] bytecode = cw.toByteArray();  // Compile the ClassWriter to bytecode
+            structClasses.put(className, bytecode);  // Store in the new map
+        }
         compiledClasses.putAll(structClasses);
 
         for (Map.Entry<String, byte[]> entry : structClasses.entrySet()) {
@@ -414,60 +415,80 @@ public class ByteCodeGeneration {
 
     private void loadIntVariable(String varName) {
         if(topLevel){
-            cw.visitField(GETSTATIC, varName, "I",null,null);
-            //mv.visitFieldInsn(GETSTATIC, className, varName, "I");
+            //cw.visitField(GETSTATIC, varName, "I",null,null);
+            mv.visitFieldInsn(GETSTATIC, className, varName, "I");
         }
         else {
-            int index = getLocalVariableIndex(varName);
-            mv.visitVarInsn(Opcodes.ILOAD, index);
+            if(variables.containsKey(varName)) {
+                int index = getLocalVariableIndex(varName);
+                mv.visitVarInsn(Opcodes.ILOAD, index);
+            }else{
+                mv.visitFieldInsn(GETSTATIC, className, varName, "I");
+            }
         }
     }
 
     private void loadFloatVariable(String varName) {
         if(topLevel){
-            cw.visitField(GETSTATIC, varName, "F",null,null);
-            //mv.visitFieldInsn(GETSTATIC, className, varName, "F");
+            //cw.visitField(GETSTATIC, varName, "F",null,null);
+            mv.visitFieldInsn(GETSTATIC, className, varName, "F");
         }
         else {
-            int index = getLocalVariableIndex(varName);
-            mv.visitVarInsn(Opcodes.FLOAD, index);
+            if(variables.containsKey(varName)) {
+                int index = getLocalVariableIndex(varName);
+                mv.visitVarInsn(Opcodes.FLOAD, index);
+            }else{
+                mv.visitFieldInsn(GETSTATIC, className, varName, "F");
+            }
         }
     }
 
     private void loadBooleanVariable(String varName) {
         if(topLevel){
-            cw.visitField(GETSTATIC, varName, "I",null,null);
-            //mv.visitFieldInsn(GETSTATIC, className, varName, "I");
+            //cw.visitField(GETSTATIC, varName, "I",null,null);
+            mv.visitFieldInsn(GETSTATIC, className, varName, "I");
         }
         else {
-            int index = getLocalVariableIndex(varName);
-            mv.visitVarInsn(Opcodes.ILOAD, index);
+            if(variables.containsKey(varName)) {
+                int index = getLocalVariableIndex(varName);
+                mv.visitVarInsn(Opcodes.ILOAD, index);
+            }else{
+                mv.visitFieldInsn(GETSTATIC, className, varName, "I");
+            }
         }// Booleans are handled as integers in the JVM
     }
 
     private void loadReferenceVariable(String varName) {
         if(topLevel){
-            cw.visitField(GETSTATIC, varName, "A",null,null);
-            //mv.visitFieldInsn(GETSTATIC, className, varName, "A");
+            //cw.visitField(GETSTATIC, varName, "A",null,null);
+            mv.visitFieldInsn(GETSTATIC, className, varName, "A");
         }
         else {
-            int index = getLocalVariableIndex(varName);
-            mv.visitVarInsn(Opcodes.ALOAD, index);
+            if(variables.containsKey(varName)) {
+                int index = getLocalVariableIndex(varName);
+                mv.visitVarInsn(Opcodes.ALOAD, index);
+            }else{
+                mv.visitFieldInsn(GETSTATIC, className, varName, "A");
+            }
         }
     }
     private void loadStringVariable(String varName) {
         if(topLevel){
-            cw.visitField(GETSTATIC, varName, "Ljava/lang/String;",null,null);
-            //mv.visitFieldInsn(GETSTATIC, className, varName, "A");
+            //cw.visitField(GETSTATIC, varName, "Ljava/lang/String;",null,null);
+            mv.visitFieldInsn(GETSTATIC, className, varName, "Ljava/lang/String;");
         }
         else {
-            int index = getLocalVariableIndex(varName);
-            mv.visitVarInsn(Opcodes.ALOAD, index);
+            if(variables.containsKey(varName)) {
+                int index = getLocalVariableIndex(varName);
+                mv.visitVarInsn(Opcodes.ALOAD, index);
+            }else{
+                mv.visitFieldInsn(GETSTATIC, className, varName, "Ljava/lang/String;");
+            }
         }
     }
 
     private int getLocalVariableIndex(String varName) {
-        return variables.get(varName).getKey();
+        return variables.get(varName);
     }
     private Object arrayAccess(ArrayElementAccess node) {
         String arrayName = ((Leaf)node.children.get(0)).value; // This retrieves the array name
@@ -565,8 +586,10 @@ public class ByteCodeGeneration {
                 readInt();
                 break;
             case "readFloat":
+                readFloat();
                 break;
             case "readString":
+                readString();
                 break;
             case "writeInt":
             case "writeFloat":
@@ -575,11 +598,13 @@ public class ByteCodeGeneration {
                 write(node, functionName);
                 break;
             case "len":
+                len(node);
                 break;
             case "floor":
                 floor(node);
                 break;
             case "chr":
+                chr();
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported function: " + functionName);
@@ -593,6 +618,20 @@ public class ByteCodeGeneration {
         mv.visitMethodInsn(INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/Scanner", "nextInt", "()I", false);
     }
+    private void readFloat() {
+        mv.visitTypeInsn(NEW, "java/util/Scanner");
+        mv.visitInsn(DUP);
+        mv.visitFieldInsn(GETSTATIC, "java/lang/System", "in", "Ljava/io/InputStream;");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/Scanner", "nextFloat", "()F", false);
+    }
+    private void readString() {
+        mv.visitTypeInsn(NEW, "java/util/Scanner");
+        mv.visitInsn(DUP);
+        mv.visitFieldInsn(GETSTATIC, "java/lang/System", "in", "Ljava/io/InputStream;");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/Scanner", "nextLine", "()Ljava/lang/String;", false);
+    }
 
     private void write(FunctionCall node, String functionName) {
         // Assume node.children.get(1) holds the value to write
@@ -603,6 +642,20 @@ public class ByteCodeGeneration {
     }
     private void floor(FunctionCall node) {
         mv.visitMethodInsn(INVOKESTATIC, "java/lang/Math", "floor", "(F)I", false);
+    }
+    private void len(FunctionCall node){
+        String type = getType((Expression) node.children.get(1).children.get(0)); //argument
+        if (type.equals("string")){
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "length", "()I", false);
+        }else {
+            mv.visitInsn(Opcodes.ARRAYLENGTH);
+        }
+    }
+    private void chr(){
+        mv.visitTypeInsn(Opcodes.NEW, "java/lang/String");
+        mv.visitInsn(Opcodes.DUP_X1);
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/String", "<init>", "(I)V", false);
     }
     private String getFunctionDescriptor(FunctionCall node) {
         StringBuilder descriptor = new StringBuilder();
@@ -642,6 +695,8 @@ public class ByteCodeGeneration {
         }
         else if(n instanceof StructFieldAccess){
             return fieldAccess((StructFieldAccess) n);
+        }else if(n instanceof NewArray){
+            return newArray((NewArray) n);
         }
         return null;
     }
@@ -862,7 +917,7 @@ public class ByteCodeGeneration {
     private int registerVariable (String name, org.objectweb.asm.Type type) {
         int index = variableCounter;
         variableCounter += type.getSize();
-        variables.put(name,new Pair<>(index, type));
+        variables.put(name,index);
         return index;
     }
 
@@ -901,7 +956,7 @@ public class ByteCodeGeneration {
             //mv.visitFieldInsn(Opcodes.PUTSTATIC, className, "a", "I");
             mv.visitLocalVariable(name, getTypeDescriptor(type), null, start, end, index);
             //mv.visitFieldInsn(PUTFIELD, className, name,getTypeDescriptor(type));
-            variables.put(name, new Pair<>(index,typeASM));
+            variables.put(name, index);
         }
 
         return null;
@@ -910,7 +965,16 @@ public class ByteCodeGeneration {
     private Object newArray(NewArray node){
 
         String type = node.children.get(0).children.get(0).value;
-
+        expressionStmt((Expression) node.children.get(1));
+        if (type.equals("int")){
+            mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_INT);
+        }else if(type.equals("bool")){
+            mv.visitIntInsn(Opcodes.NEWARRAY, T_BOOLEAN);
+        }else if(type.equals("float")){
+            mv.visitIntInsn(Opcodes.NEWARRAY, T_FLOAT);
+        }else if(type.equals("string")){
+            mv.visitTypeInsn(Opcodes.ANEWARRAY,"java/lang/String");
+        }
         return null;
     }
 
@@ -932,9 +996,8 @@ public class ByteCodeGeneration {
         if(left instanceof Variable){
             if(variables.containsKey(left.children.get(0).value)){//si variable locale
                 expressionStmt((Expression) node.children.get(1));
-                Pair p = variables.get(left.children.get(0).value);
-                org.objectweb.asm.Type type = (org.objectweb.asm.Type) p.getValue();
-                int index = (int) p.getKey();
+                int index= variables.get(left.children.get(0).value);
+                org.objectweb.asm.Type type = org.objectweb.asm.Type.getType(getTypeDescriptor(getType((Expression) node.children.get(1))));
                 //convertir les 2 types ???
                 mv.visitVarInsn(type.getOpcode(ISTORE), index);
             }else {//variable globale
@@ -1028,7 +1091,7 @@ public class ByteCodeGeneration {
         init.visitEnd();
 
         struct.visitEnd();
-        structs.add(new Pair<>(binaryName, struct));
+        structs.put(binaryName, struct);
         struct = null;
         return null;
     }

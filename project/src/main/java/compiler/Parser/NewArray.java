@@ -8,4 +8,5 @@ public class NewArray extends Node{
         this.children.add(type);
         this.children.add(e);
     }
+
 }

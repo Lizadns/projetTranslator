@@ -146,6 +146,7 @@ public class SemanticAnalysis {
                 }
                 Expression rightDeclaration = (Expression) globalNode.get(2);
                 String rightDclrt = getType(rightDeclaration);
+
                 isTheSameTypeWithArrayElementAccess(leftDeclaration.children.get(0).value, rightDclrt);
             } else if (nodeChildren instanceof Assignment) {
                 ArrayList<Node> assignmentChildren = nodeChildren.children;
@@ -574,6 +575,9 @@ public class SemanticAnalysis {
             else{
                 typeDeclaration=v.children.get(0).children.get(0).value;
             }
+            if(parent.children.get(0).value.contains("[]")){
+                typeDeclaration+="[]";
+            }
             ((Variable) node).addType(typeDeclaration);
             return typeDeclaration;
         }else if (node instanceof Expression){
@@ -807,7 +811,7 @@ public class SemanticAnalysis {
 
     void isTheSameTypeWithArrayElementAccess(String left, String right) throws SemanticException {
 
-        if(!right.contains(left)){
+        if(!right.toLowerCase().contains(left.toLowerCase())){
             System.out.println(left);
             System.out.println(right);
             throw new SemanticException("TypeError");
