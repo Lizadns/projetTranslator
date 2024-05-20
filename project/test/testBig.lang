@@ -1,0 +1,26 @@
+final float test = 3.1;
+bool a = true;
+
+def int ifTest(){
+    int value = readInt();
+    int i;
+     for (i=1, i<100, i = i+1) {
+        while (value!=3){
+            if (i > 10){
+                value = value + value();
+            }else {
+                value = value - value();
+            }
+        }
+    }return value;
+}
+
+
+def int value(){
+    int j = 4;
+    if(j==0){
+        return j;
+    }
+    return 1;
+}
+
