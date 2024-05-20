@@ -716,6 +716,7 @@ public class SemanticAnalysis {
             return null;
         }
         else if (builtInProcedure.equals("writeln")){
+            String argType = getType((Expression) children.get(1).children.get(0));
             return null;
         }
 

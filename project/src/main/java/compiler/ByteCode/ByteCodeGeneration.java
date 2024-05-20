@@ -66,6 +66,7 @@ public class ByteCodeGeneration {
         // Write each struct class bytecode
         for (Map.Entry<String, byte[]> entry : structClasses.entrySet()) {
             String structClassName = entry.getKey().replace("/", ".") + ".class";
+            structClassName = binaryName.substring(0,binaryName.lastIndexOf("/")+1)+structClassName;
             writeFile(structClassName, entry.getValue());
         }
 
@@ -382,8 +383,13 @@ public class ByteCodeGeneration {
     private Object variable(Variable node) {
         String varName = node.children.get(0).value; // Assuming the variable name is stored in the first child
         // You would need a method to determine the variable's type
-        compiler.Parser.Type t = (compiler.Parser.Type) node.children.get(1);
-        String type = t.children.get(0).value;
+        String type = "int";
+        if(node.children.size()==1){
+
+        }else{
+            compiler.Parser.Type t = (compiler.Parser.Type) node.children.get(1);
+            type = t.children.get(0).value;
+        }
         // Load the variable based on its type
         switch (type) {
             case "int":
@@ -567,6 +573,10 @@ public class ByteCodeGeneration {
                 return null;
             }
         }
+        if(structs.containsKey(functionName)){
+            //initialisation structure
+            return null;
+        }
         String descriptor = getFunctionDescriptor(node);
         //j'avais oublié que ça pouvait aussi être une initialisation d'une structure oupssi
         mv.visitMethodInsn(INVOKESTATIC, className, functionName, descriptor,false);
@@ -657,7 +667,7 @@ public class ByteCodeGeneration {
         for (Node child : node.children) {
             if (child instanceof Argument) {
                 Argument a = (Argument) child;
-                descriptor.append(getTypeDescriptor(a.children.get(1).children.get(0).value));
+                descriptor.append(getTypeDescriptor(getType((Expression) a.children.get(0))));
             }
         }
 
@@ -754,6 +764,13 @@ public class ByteCodeGeneration {
     private String getType(Expression expression){
         Node n = expression.children.get(0);
         if(n instanceof FunctionCall){
+            String functionName = n.children.get(0).value;
+            if(structs.containsKey(functionName)){
+                return functionName;
+            }
+            if(n.children.get(n.children.size()-1) instanceof Argument){
+                return "int";
+            }
             compiler.Parser.Type t = (compiler.Parser.Type) n.children.get(n.children.size()-1);
             return t.children.get(0).value;
         }
@@ -782,6 +799,9 @@ public class ByteCodeGeneration {
             return getType((Expression)n.children.get(0));
         }
         else if (n instanceof Variable){
+            if(n.children.size()==1){
+                return "int";
+            }
             compiler.Parser.Type t = (compiler.Parser.Type) n.children.get(1);
             return t.children.get(0).value;
         }
