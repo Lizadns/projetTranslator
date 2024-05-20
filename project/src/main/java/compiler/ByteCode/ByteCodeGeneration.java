@@ -58,33 +58,25 @@ public class ByteCodeGeneration {
         }
         compiledClasses.putAll(structClasses);
 
-        for (Map.Entry<String, byte[]> entry : structClasses.entrySet()) {
-            byte[] structClassBytes = entry.getValue();
-            try (FileOutputStream fos = new FileOutputStream(className)) {
-                fos.write(structClassBytes);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }}
-
         // Write the main class bytecode
         writeFile(binaryName, compiledClasses.get(className));
 
+
+
         // Write each struct class bytecode
-        structClasses.forEach((name, bytes) -> writeFile(name + ".class", bytes));
+        for (Map.Entry<String, byte[]> entry : structClasses.entrySet()) {
+            String structClassName = entry.getKey().replace("/", ".") + ".class";
+            writeFile(structClassName, entry.getValue());
+        }
 
         return compiledClasses;
     }
 
-    private void writeFile(String fileName, byte[] data) {
-        File file = new File(fileName);
-        File parent = file.getParentFile();
-        if (parent != null && !parent.exists()) {
-            parent.mkdirs(); // Make sure the directory exists
-        }
-        try (FileOutputStream fos = new FileOutputStream(fileName)) {
+    private void writeFile(String filename, byte[] data) {
+        try (FileOutputStream fos = new FileOutputStream(filename)) {
             fos.write(data);
         } catch (IOException e) {
-            System.err.println("Failed to write file: " + fileName + " due to " + e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 
@@ -560,6 +552,7 @@ public class ByteCodeGeneration {
     }
 
     private Object funCall (FunctionCall node) {
+
         String functionName = node.children.get(0).value;
         for(int i = 1; i< node.children.size(); i++){
             //pushes the result of expressions onto the stack
