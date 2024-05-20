@@ -10,6 +10,8 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,6 +52,14 @@ public class ByteCodeGeneration {
                         pair -> pair.getValue().toByteArray()
                 ));
         compiledClasses.putAll(structClasses);
+
+        for (Map.Entry<String, byte[]> entry : structClasses.entrySet()) {
+            byte[] structClassBytes = entry.getValue();
+            try (FileOutputStream fos = new FileOutputStream(className)) {
+                fos.write(structClassBytes);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }}
 
         return compiledClasses;
     }

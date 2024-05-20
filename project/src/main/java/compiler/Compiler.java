@@ -14,6 +14,9 @@ import compiler.SemanticAnalysis.SemanticException;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Map;
+
+import static jdk.nashorn.internal.objects.Global.print;
 
 
 public class Compiler {
@@ -86,7 +89,8 @@ public class Compiler {
         sa.analyzeNode(node);
 
         ByteCodeGeneration cg = new ByteCodeGeneration(className,node);
-        cg.compile(className,node);
+        Map<String, byte[]> test = cg.compile(className,node);
+        print(test);
     }
     }
 

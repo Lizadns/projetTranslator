@@ -1,6 +1,6 @@
 final string message = "Hello";
 final bool run = true;
 
-def void main() {
+def void test() {
     int value = 1;
 }
