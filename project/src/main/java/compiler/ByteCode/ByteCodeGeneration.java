@@ -23,6 +23,7 @@ public class ByteCodeGeneration {
     private ClassWriter cw;
     private MethodVisitor mv;
     private String className;
+    private Program root;
     private int variableCounter = 0;
     private boolean topLevel;
     private HashMap<String, Pair<Integer,org.objectweb.asm.Type>> variables = new HashMap<>();
@@ -31,6 +32,11 @@ public class ByteCodeGeneration {
     private ClassWriter struct;
     ArrayList<Pair<String, ClassWriter>> structs = new ArrayList<>();
     private String[] builtInProcedures = {"readInt", "readFloat", "readString", "writeInt", "writeFloat", "write", "writeln","len","floor","chr"};
+
+    public ByteCodeGeneration(String className,Program root){
+        this.className = className;
+
+    }
 
     public Map<String, byte[]> compile(String binaryName, Node root) {
         this.className = binaryName.replace('.', '/');
