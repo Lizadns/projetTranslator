@@ -1,0 +1,12 @@
+final string message = "Hello";
+final bool run = false;
+
+float a = 8.0;
+
+def int iteration(int a, int c){
+    int i;
+    for(i = 0,i<5, i=i+1){
+        a = a + c;
+        }
+    return a;
+}
