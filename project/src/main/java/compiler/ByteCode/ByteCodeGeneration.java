@@ -10,6 +10,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -61,7 +62,26 @@ public class ByteCodeGeneration {
                 throw new RuntimeException(e);
             }}
 
+        // Write the main class bytecode
+        writeFile(binaryName, compiledClasses.get(className));
+
+        // Write each struct class bytecode
+        structClasses.forEach((name, bytes) -> writeFile(name + ".class", bytes));
+
         return compiledClasses;
+    }
+
+    private void writeFile(String fileName, byte[] data) {
+        File file = new File(fileName);
+        File parent = file.getParentFile();
+        if (parent != null && !parent.exists()) {
+            parent.mkdirs(); // Make sure the directory exists
+        }
+        try (FileOutputStream fos = new FileOutputStream(fileName)) {
+            fos.write(data);
+        } catch (IOException e) {
+            System.err.println("Failed to write file: " + fileName + " due to " + e.getMessage());
+        }
     }
 
     private byte[] root (Program node){

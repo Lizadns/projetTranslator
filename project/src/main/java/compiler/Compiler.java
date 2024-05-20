@@ -90,7 +90,7 @@ public class Compiler {
 
         ByteCodeGeneration cg = new ByteCodeGeneration(className,node);
         Map<String, byte[]> test = cg.compile(className,node);
-        print(test);
+
     }
     }
 
